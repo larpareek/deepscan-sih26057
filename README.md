@@ -113,12 +113,15 @@ The frontend and backend deploy **separately**. The React dashboard is a static 
 
 ```json
 {
+  "framework": "vite",
   "installCommand": "npm ci --prefix ui",
   "buildCommand": "npm run build --prefix ui",
   "outputDirectory": "ui/dist",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
 ```
+
+`"framework": "vite"` stops Vercel from auto-detecting the Python backend in the same repo as a FastAPI project. `.vercelignore` also keeps the backend files out of the Vercel upload.
 
 1. On Vercel, go to **Add New → Project** and import this repository. Leave *Root Directory* as the repo root; the settings above are picked up automatically.
 2. Under **Settings → Environment Variables**, add `VITE_API_BASE` = your backend URL (e.g. `https://deepscan-api.onrender.com`, no trailing slash).
