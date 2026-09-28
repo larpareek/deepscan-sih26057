@@ -128,21 +128,30 @@ The frontend and backend deploy **separately**. The React dashboard is a static 
 >
 > If you prefer to set *Root Directory* = `ui` in Vercel, move `vercel.json` into `ui/` and keep only its `rewrites` entry.
 
-### Backend on Render (or Railway)
+### Backend on Railway or Render (Docker)
 
-Create a **Web Service** from this repository with:
+The backend ships as a **`Dockerfile`**. It installs CPU-only PyTorch, bakes in `yolov8n.pt`, binds to `$PORT` and exposes `/health`. Any Docker host works.
 
-| Setting | Value |
-|---|---|
-| Runtime | Python 3.12 (pinned by `.python-version`) |
-| Build command | `pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu && pip install -r requirements.txt` |
-| Start command | `uvicorn src.api:app --host 0.0.0.0 --port $PORT` |
-| Health check path | `/health` |
-| Environment | `SSS_DEVICE=cpu`, `SSS_CORS_ORIGINS=https://<your-app>.vercel.app`, optionally `SSS_WEIGHTS`, `SSS_MAX_UPLOAD_MB` |
+> The backend uses about **550 MB of RAM** (measured), so 512 MB instances (Render Free/Starter) will run out of memory. Use a plan with **at least 1 GB**.
 
-Railway uses the same build and start commands.
+**Railway (recommended):** `railway.json` selects the Dockerfile and health check.
 
-`yolov8n.pt` downloads automatically on first start. PyTorch and Ultralytics need roughly **1–2 GB of RAM**; the smallest free instances (512 MB) may run out of memory. Uploads and reports are stored on the instance's disk and in memory, so they're lost on redeploy.
+```bash
+npm i -g @railway/cli
+railway login
+railway init            # create a project
+railway up              # build and deploy the Dockerfile
+railway domain          # generate a public URL
+railway variables --set "SSS_CORS_ORIGINS=https://<your-app>.vercel.app"
+```
+
+**Render:** `render.yaml` is a Blueprint. In the dashboard, go to **New → Blueprint**, select this repo, and enter `SSS_CORS_ORIGINS` when prompted. It uses the *Standard* (2 GB) plan.
+
+**Then connect the two:**
+1. In Vercel, set `VITE_API_BASE` to the backend URL and **redeploy** the frontend.
+2. Check that `https://<backend>/health` returns `{"status":"ok",…}`.
+
+Uploads and reports are kept on the container's disk and in memory, so they're lost on redeploy.
 
 ### Environment variables
 

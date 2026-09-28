@@ -1,0 +1,14 @@
+# DeepScan (SIH26057) Render Blueprint: New > Blueprint, pick this repo.
+services:
+  - type: web
+    name: deepscan-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    # The backend uses ~550 MB of RAM; free/starter (512 MB) instances run out of memory.
+    plan: standard
+    healthCheckPath: /health
+    envVars:
+      - key: SSS_DEVICE
+        value: cpu
+      - key: SSS_CORS_ORIGINS
+        sync: false # prompted on creation: your Vercel URL, e.g. https://deepscan.vercel.app

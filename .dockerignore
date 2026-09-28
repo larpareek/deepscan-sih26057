@@ -1,0 +1,13 @@
+.git
+.github
+ui
+docs
+data
+models/*.pt
+models/*.onnx
+**/__pycache__
+**/node_modules
+.venv
+.env
+*.md
+!README.md
