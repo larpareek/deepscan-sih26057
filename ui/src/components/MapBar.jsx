@@ -1,3 +1,4 @@
+// DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 
 // Leaflet is only needed once the map is expanded: load it on demand to keep the first paint light.

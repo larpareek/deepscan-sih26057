@@ -1,4 +1,6 @@
-"""FastAPI service exposing the SSS preprocessing -> detection -> geotagging pipeline.
+"""DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057).
+
+FastAPI service exposing the SSS preprocessing -> detection -> geotagging pipeline.
 
 Run:
     uvicorn src.api:app --host 0.0.0.0 --port 8000
@@ -134,7 +136,7 @@ def _run_pipeline(job: Job, req: DetectRequest) -> dict:
 
     job.status, job.report_dir = "done", report_dir
     # Merge raw detector output (percent confidence, shadow info) with geotags.
-    for tagged, det in zip(report["detections"], detections):
+    for tagged, det in zip(report["detections"], detections, strict=True):
         tagged["confidence_percent"] = det.confidence
         tagged["shadow_fraction"] = round(det.shadow_fraction, 3)
         tagged["shadow_penalized"] = det.shadow_penalized
@@ -173,19 +175,19 @@ async def upload(
     try:
         meta = json.loads(await metadata.read())
     except json.JSONDecodeError as e:
-        raise HTTPException(422, f"metadata is not valid JSON: {e}")
+        raise HTTPException(422, f"metadata is not valid JSON: {e}") from e
 
     try:
         decoded = await run_in_threadpool(_decode_image, image_bytes)
     except ValueError as e:
-        raise HTTPException(422, str(e))
+        raise HTTPException(422, str(e)) from e
 
     h, w = decoded.shape[:2]
     meta.setdefault("image_width_px", w)
     try:
         parsed = SonarMetadata.from_dict(meta)
     except (KeyError, TypeError, ValueError) as e:
-        raise HTTPException(422, f"invalid metadata: {e!r}")
+        raise HTTPException(422, f"invalid metadata: {e!r}") from e
     if parsed.num_pings != h:
         raise HTTPException(422, f"metadata has {parsed.num_pings} ping_coords but image has {h} rows")
 

@@ -1,4 +1,6 @@
-"""Convert SSS pixel detections into geographic positions and survey reports.
+"""DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057).
+
+Convert SSS pixel detections into geographic positions and survey reports.
 
 Image convention (same as preprocessing.py): rows are pings (along-track), columns
 are range samples across-track. For a combined port+starboard waterfall the centre
@@ -16,10 +18,11 @@ from __future__ import annotations
 import csv
 import json
 import math
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 METERS_PER_DEG_LAT = 111_320.0
 
@@ -31,19 +34,19 @@ class SonarMetadata:
     swath_width_m: float  # total slant-range swath covered by the image width (port + starboard)
     image_width_px: int
     headings_deg: list[float] | None = None  # per-ping heading; derived from track if None
-    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     dual_channel: bool = True  # False = single-sided image with nadir at column 0
     slant_range_correction: bool = True  # project slant range onto the seabed using altitude
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> "SonarMetadata":
+    def from_dict(cls, d: dict[str, Any]) -> SonarMetadata:
         return cls(
             ping_coords=[tuple(p) for p in d["ping_coords"]],
             altitude_m=float(d["altitude_m"]),
             swath_width_m=float(d["swath_width_m"]),
             image_width_px=int(d["image_width_px"]),
             headings_deg=d.get("headings_deg"),
-            timestamp=d.get("timestamp") or datetime.now(timezone.utc).isoformat(),
+            timestamp=d.get("timestamp") or datetime.now(UTC).isoformat(),
             dual_channel=d.get("dual_channel", True),
             slant_range_correction=d.get("slant_range_correction", True),
         )
@@ -114,7 +117,7 @@ class GeotaggingEngine:
         """Average distance travelled between consecutive pings."""
         if meta.num_pings < 2:
             return 0.0
-        total = sum(_distance_m(a, b) for a, b in zip(meta.ping_coords, meta.ping_coords[1:]))
+        total = sum(_distance_m(a, b) for a, b in zip(meta.ping_coords, meta.ping_coords[1:], strict=False))
         return total / (meta.num_pings - 1)
 
     def pixel_to_gps(self, x: float, y: float, metadata: SonarMetadata | dict) -> tuple[float, float]:

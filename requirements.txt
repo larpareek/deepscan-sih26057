@@ -1,13 +1,16 @@
-numpy>=1.26
-opencv-python-headless>=4.9
-scipy>=1.11
-torch>=2.2
-ultralytics>=8.2
-pyproj>=3.6
-fastapi>=0.110
-uvicorn[standard]>=0.29
-python-multipart>=0.0.9
-pydantic>=2.6
-onnx>=1.15
-onnxslim>=0.1
-onnxruntime>=1.17
+# DeepScan (SIH26057) backend dependencies. Pinned; tested with Python 3.12.
+# ultralytics pulls in torch/torchvision. For a smaller CPU-only install, first run:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+fastapi==0.141.1
+uvicorn==0.54.0
+python-multipart==0.0.32
+pydantic==2.13.5
+ultralytics==8.4.164
+opencv-python==5.0.0.93
+numpy==2.5.3
+onnx==1.23.0
+onnxruntime==1.30.0
+# Used by scripts/export_onnx.py to simplify the exported graph
+onnxslim==0.1.96
+# GeoTIFF / georeferenced sonar mosaics
+rasterio==1.5.1

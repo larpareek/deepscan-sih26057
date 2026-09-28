@@ -1,3 +1,4 @@
+// DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 // Plain-language explanations shown in <Term> tooltips.
 export const GLOSSARY = {
   "sonar waterfall":

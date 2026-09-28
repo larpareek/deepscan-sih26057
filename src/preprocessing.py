@@ -1,4 +1,6 @@
-"""Preprocessing for Side-Scan Sonar (SSS) waterfall imagery.
+"""DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057).
+
+Preprocessing for Side-Scan Sonar (SSS) waterfall imagery.
 
 Convention: images are 2D arrays of shape (pings, range_bins), i.e. each row is
 one acoustic ping (along-track) and each column is a slant-range sample

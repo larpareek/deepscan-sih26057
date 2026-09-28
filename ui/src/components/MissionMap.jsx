@@ -1,3 +1,4 @@
+// DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 import L from "leaflet";
 import { useEffect, useMemo, useRef } from "react";
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from "react-leaflet";

@@ -1,3 +1,4 @@
+// DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 import { motion, useReducedMotion } from "framer-motion";
 import { useState } from "react";
 import { Icon, MagneticButton, Term } from "./ui";

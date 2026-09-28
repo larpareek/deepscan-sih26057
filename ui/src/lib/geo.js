@@ -1,3 +1,4 @@
+// DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 // JS mirror of src/geotagging.py (linear mapping + slant-range correction, flat-earth offsets).
 const M_PER_DEG_LAT = 111_320;
 

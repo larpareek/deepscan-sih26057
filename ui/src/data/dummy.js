@@ -1,3 +1,4 @@
+// DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 import { bboxDimensionsM, offsetLatLon, pixelToGps } from "../lib/geo";
 
 export const IMAGE_W = 1024;

@@ -1,3 +1,4 @@
+// DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 // Per-class display config ("Bioluminescent Deep Sea").
 //  rgb / hex: glow colour for chips, rings and map markers.
 //  text:      colour for class-name text; all are >= 4.5:1 on every surface.

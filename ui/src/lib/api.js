@@ -1,3 +1,4 @@
+// DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 // Thin client for the FastAPI backend (proxied at /api by vite.config.js).
 const BASE = import.meta.env.VITE_API_BASE ?? "/api";
 

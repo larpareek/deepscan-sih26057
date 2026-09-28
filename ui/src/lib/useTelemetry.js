@@ -1,3 +1,4 @@
+// DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 import { useEffect, useState } from "react";
 
 const BASE = { depth: 42.6, altitude: 10.2, speed: 3.1, heading: 2, pitch: -1.4, roll: 0.8, battery: 78, temp: 18.4 };

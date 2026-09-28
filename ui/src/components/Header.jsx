@@ -1,3 +1,4 @@
+// DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 import * as Popover from "@radix-ui/react-popover";
 import { useEffect, useState } from "react";
 import { CLASS_STYLES } from "../lib/classes";

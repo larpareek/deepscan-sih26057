@@ -1,0 +1,12 @@
+# DeepScan (SIH26057): tool configuration (dependencies live in requirements.txt)
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = ["ui/node_modules"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI declares request parameters via default-argument calls; that's the framework idiom.
+extend-immutable-calls = ["fastapi.File", "fastapi.Query", "fastapi.Form", "fastapi.Depends"]

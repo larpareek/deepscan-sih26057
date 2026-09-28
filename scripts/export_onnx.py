@@ -1,4 +1,6 @@
-"""Export YOLOv8 weights to ONNX for edge deployment (Jetson, Raspberry Pi, AUV compute).
+"""DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057).
+
+Export YOLOv8 weights to ONNX for edge deployment (Jetson, Raspberry Pi, AUV compute).
 
 Usage:
     python scripts/export_onnx.py --weights models/best.pt --imgsz 640

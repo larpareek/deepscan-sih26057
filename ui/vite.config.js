@@ -1,3 +1,4 @@
+// DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 

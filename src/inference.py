@@ -1,4 +1,6 @@
-"""YOLOv8 inference for debris/anomaly detection on preprocessed SSS imagery."""
+"""DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057).
+
+YOLOv8 inference for debris/anomaly detection on preprocessed SSS imagery."""
 
 from __future__ import annotations
 
@@ -137,6 +139,7 @@ class MarineDebrisDetector:
             result.boxes.xyxy.cpu().numpy(),
             result.boxes.conf.cpu().numpy(),
             result.boxes.cls.cpu().numpy().astype(int),
+            strict=True,
         ):
             x1, y1, x2, y2 = np.clip(np.round(xyxy), 0, [w, h, w, h]).astype(int)
             detections.append(Detection(
