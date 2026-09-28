@@ -103,6 +103,54 @@ python -m src.preprocessing data/raw/scan.png data/processed/scan_clean.png --me
 python scripts/export_onnx.py --weights models/yolov8n.pt --imgsz 640
 ```
 
+## Deployment
+
+The frontend and backend deploy **separately**. The React dashboard is a static site on **Vercel**; the FastAPI + YOLOv8 backend runs on **Render** or **Railway**. They're connected by one environment variable, `VITE_API_BASE`.
+
+### Frontend on Vercel (one click)
+
+`vercel.json` lives in the **repository root**. It tells Vercel to install and build inside `ui/` and to serve `ui/dist`, so no *Root Directory* change is needed:
+
+```json
+{
+  "installCommand": "npm ci --prefix ui",
+  "buildCommand": "npm run build --prefix ui",
+  "outputDirectory": "ui/dist",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
+```
+
+1. On Vercel, go to **Add New → Project** and import this repository. Leave *Root Directory* as the repo root; the settings above are picked up automatically.
+2. Under **Settings → Environment Variables**, add `VITE_API_BASE` = your backend URL (e.g. `https://deepscan-api.onrender.com`, no trailing slash).
+3. Click **Deploy**. The CLI alternative is `npm i -g vercel && vercel --prod`.
+
+> `VITE_*` variables are baked in **at build time**. Redeploy the frontend after changing `VITE_API_BASE`. If it's unset, the site still works in **demo mode**, but live detection is disabled.
+>
+> If you prefer to set *Root Directory* = `ui` in Vercel, move `vercel.json` into `ui/` and keep only its `rewrites` entry.
+
+### Backend on Render (or Railway)
+
+Create a **Web Service** from this repository with:
+
+| Setting | Value |
+|---|---|
+| Runtime | Python 3.12 (pinned by `.python-version`) |
+| Build command | `pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu && pip install -r requirements.txt` |
+| Start command | `uvicorn src.api:app --host 0.0.0.0 --port $PORT` |
+| Health check path | `/health` |
+| Environment | `SSS_DEVICE=cpu`, `SSS_CORS_ORIGINS=https://<your-app>.vercel.app`, optionally `SSS_WEIGHTS`, `SSS_MAX_UPLOAD_MB` |
+
+Railway uses the same build and start commands.
+
+`yolov8n.pt` downloads automatically on first start. PyTorch and Ultralytics need roughly **1–2 GB of RAM**; the smallest free instances (512 MB) may run out of memory. Uploads and reports are stored on the instance's disk and in memory, so they're lost on redeploy.
+
+### Environment variables
+
+Every variable is documented in [`.env.example`](.env.example):
+
+- **Frontend:** `VITE_API_BASE` goes in `ui/.env` locally, or in the Vercel settings.
+- **Backend:** `SSS_WEIGHTS`, `SSS_DEVICE`, `SSS_MAX_UPLOAD_MB`, `SSS_CORS_ORIGINS` and `PYTHON_VERSION` are read from the process environment.
+
 ## Model Performance
 
 > The weights currently shipped are the **stock COCO-pretrained `yolov8n.pt`**. The four SSS classes need fine-tuning on labelled sonar data (see *Datasets*) before the accuracy figures below can be measured.
