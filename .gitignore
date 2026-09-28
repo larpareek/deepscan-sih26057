@@ -1,0 +1,35 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ruff_cache/
+.pytest_cache/
+
+# ---- Node / frontend ----
+node_modules/
+ui/dist/
+dist/
+*.log
+npm-debug.log*
+
+# ---- Editors / OS ----
+.vscode/
+.idea/
+.DS_Store
+
+# ---- Secrets ----
+.env
+.env.*
+!.env.example
+
+# ---- Models & data (large / generated) ----
+*.pt
+*.onnx
+*.tif
+*.tiff
+# Anchored to the repo root so ui/src/data/ (demo source code) is NOT ignored
+/data/**
+!/data/**/
+!/data/**/.gitkeep
