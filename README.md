@@ -107,29 +107,16 @@ python scripts/export_onnx.py --weights models/yolov8n.pt --imgsz 640
 
 The frontend and backend deploy **separately**. The React dashboard is a static site on **Vercel**; the FastAPI + YOLOv8 backend runs on **Render** or **Railway**. They're connected by one environment variable, `VITE_API_BASE`.
 
-### Frontend on Vercel (one click)
+### Frontend on Vercel
 
-`vercel.json` lives in the **repository root**. It tells Vercel to install and build inside `ui/` and to serve `ui/dist`, so no *Root Directory* change is needed:
+The frontend lives in `ui/`, and **`ui/vercel.json`** holds its Vercel config (Vite preset, SPA rewrites). The repo root also contains the Python backend, so Vercel must be pointed at `ui/`. Otherwise it auto-detects a FastAPI app and the build fails.
 
-```json
-{
-  "framework": "vite",
-  "installCommand": "npm ci --prefix ui",
-  "buildCommand": "npm run build --prefix ui",
-  "outputDirectory": "ui/dist",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
-}
-```
-
-`"framework": "vite"` stops Vercel from auto-detecting the Python backend in the same repo as a FastAPI project. `.vercelignore` also keeps the backend files out of the Vercel upload.
-
-1. On Vercel, go to **Add New → Project** and import this repository. Leave *Root Directory* as the repo root; the settings above are picked up automatically.
-2. Under **Settings → Environment Variables**, add `VITE_API_BASE` = your backend URL (e.g. `https://deepscan-api.onrender.com`, no trailing slash).
-3. Click **Deploy**. The CLI alternative is `npm i -g vercel && vercel --prod`.
+1. On Vercel, go to **Add New → Project** and import this repository.
+2. Set **Root Directory** to `ui` and **Framework Preset** to **Vite**. For an existing project, change these under **Settings → Build and Deployment**.
+3. Under **Settings → Environment Variables**, add `VITE_API_BASE` = your backend URL (e.g. `https://deepscan-api.up.railway.app`, no trailing slash).
+4. Click **Deploy**. The CLI alternative is `cd ui && npx vercel --prod`.
 
 > `VITE_*` variables are baked in **at build time**. Redeploy the frontend after changing `VITE_API_BASE`. If it's unset, the site still works in **demo mode**, but live detection is disabled.
->
-> If you prefer to set *Root Directory* = `ui` in Vercel, move `vercel.json` into `ui/` and keep only its `rewrites` entry.
 
 ### Backend on Railway or Render (Docker)
 
