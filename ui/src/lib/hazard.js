@@ -14,12 +14,13 @@ const HAZARD_CLASSES = new Set(["shipwreck", "ghost_net"]);
 const INFRASTRUCTURE = new Set(["pipe"]);
 
 /**
- * - REVIEW   low evidence: in an acoustic shadow, below 60% confidence, or an unknown class
+ * - REVIEW   low evidence: in an acoustic shadow, below 60% confidence, an unknown class,
+ *            or an input the backend flagged as not sonar
  * - CRITICAL wreck / ghost net at >= 80% confidence
  * - WARNING  wreck / ghost net below 80%, or exposed infrastructure (pipeline)
  */
 export function hazardStatus(d) {
-  if (d.shadowPenalized || d.confidence < 60) return STATUS.review;
+  if (d.unverifiedInput || d.shadowPenalized || d.confidence < 60) return STATUS.review;
   if (HAZARD_CLASSES.has(d.cls)) return d.confidence >= 80 ? STATUS.critical : STATUS.warning;
   if (INFRASTRUCTURE.has(d.cls)) return STATUS.warning;
   return STATUS.review;
@@ -28,5 +29,5 @@ export function hazardStatus(d) {
 export const STATUS_RULES = [
   [STATUS.critical, "Wreck or ghost net, confidence ≥ 80%"],
   [STATUS.warning, "Wreck / ghost net < 80%, or exposed pipeline"],
-  [STATUS.review, "Unclassified, < 60%, or in acoustic shadow"],
+  [STATUS.review, "Unclassified, < 60%, in acoustic shadow, or non-sonar input"],
 ];

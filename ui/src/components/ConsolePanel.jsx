@@ -29,7 +29,7 @@ function FileRow({ label, file, status }) {
   );
 }
 
-function ScanSection({ scan, files, fileChecks, onImport, onFiles, onRun, canRun, runReason, runNote, busy, error, onLoadDemo, history, currentScanId, onRestore, onRunDemoLive, canRunDemoLive, onDownloadSample }) {
+function ScanSection({ scan, files, fileChecks, onImport, onFiles, onRun, canRun, runReason, runNote, busy, error, inputWarning, onLoadDemo, history, currentScanId, onRestore, onRunDemoLive, canRunDemoLive, onDownloadSample }) {
   const hintId = useId();
   return (
     <section className="section" aria-labelledby="sec-scan">
@@ -102,6 +102,15 @@ function ScanSection({ scan, files, fileChecks, onImport, onFiles, onRun, canRun
           </button>
           <p className="mt-1.5 text-2xs text-ink-3">Sends the demo waterfall through the deployed detection pipeline.</p>
         </div>
+      )}
+      {inputWarning && !busy && (
+        <p role="status" className="mt-2 flex items-start gap-1.5 border-l-2 border-warn bg-warn/5 px-2 py-1.5 text-xs text-ink-2">
+          <AlertTriangle size={13} className="mt-0.5 shrink-0 text-warn" aria-hidden="true" />
+          <span>
+            <span className="font-medium text-warn">Not recognised as sonar.</span> This looks like a photo or false-colour image, so
+            every detection is set to REVIEW.
+          </span>
+        </p>
       )}
       {error && (
         <p role="alert" className="mt-2 flex items-start gap-1.5 border-l-2 border-crit bg-crit/5 px-2 py-1.5 text-xs text-crit-text">

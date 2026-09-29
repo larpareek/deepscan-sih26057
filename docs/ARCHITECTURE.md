@@ -32,6 +32,8 @@ flowchart LR
 
 The steps run in this order on purpose. Filling dropouts first stops blank pings from skewing the noise and contrast statistics. Despeckling before CLAHE stops CLAHE from amplifying the speckle. `fill_dropouts` also returns a **dropout mask**, so detections over interpolated data can be flagged.
 
+**Input check.** `sonar_input_warning` flags uploads that are clearly not sonar: many saturated pixels spread over many hues (a photograph or a false-colour render). Grayscale and single-hue (bronze) waterfalls pass. When an upload is flagged, `/upload` and `/detect` return `input_warning` and the UI sets every detection to REVIEW, so a random photo never produces a CRITICAL hazard.
+
 ### 2. Inference (`src/inference.py`, `MarineDebrisDetector`)
 
 - Runs Ultralytics YOLOv8 (`.pt` or exported `.onnx`) on the preprocessed image, with a low internal confidence floor of 0.05.

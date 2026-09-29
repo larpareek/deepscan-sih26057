@@ -2,7 +2,7 @@
 
 Tests for the side-scan sonar preprocessing chain.
 """
-
+import cv2
 import numpy as np
 import pytest
 
@@ -13,6 +13,7 @@ from src.preprocessing import (
     fill_dropouts,
     lee_filter,
     preprocess,
+    sonar_input_warning,
     to_uint8,
 )
 
@@ -91,3 +92,17 @@ def test_preprocess_accepts_colour_images():
     rgb = np.dstack([to_uint8(speckled_seabed())] * 3)
     enhanced, _ = preprocess(rgb)
     assert enhanced.ndim == 2
+
+
+def test_sonar_input_warning_flags_colour_photos_only():
+    rng = np.random.default_rng(0)
+    gray = rng.integers(0, 255, (64, 64), dtype=np.uint8)
+    assert sonar_input_warning(gray) is None
+    # Single-hue (bronze) sonar palette is fine
+    bronze = np.stack([gray // 3, gray // 2, gray], axis=-1)
+    assert sonar_input_warning(bronze) is None
+    # Many saturated hues: a natural colour image
+    hues = rng.integers(0, 180, (64, 64), dtype=np.uint8)
+    hsv = np.stack([hues, np.full_like(hues, 200), np.full_like(hues, 200)], axis=-1)
+    photo = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+    assert "not a sonar waterfall" in sonar_input_warning(photo)

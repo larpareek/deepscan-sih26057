@@ -58,6 +58,7 @@ export async function runDetection(jobId, strength) {
       lon: d.location.longitude,
       dims: d.dimensions_meters,
       shadowPenalized: Boolean(d.shadow_penalized),
+      unverifiedInput: Boolean(body.input_warning),
     })),
   };
 }

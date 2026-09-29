@@ -57,6 +57,12 @@ export default function ObjectDetail({ d, detectedAt, threshold, georeferenced =
             <Field label="Detected">{detectedAt}</Field>
           </dl>
 
+          {d.unverifiedInput && (
+            <p className="mt-3 flex items-start gap-2 border-l-2 border-warn bg-warn/5 px-2 py-1.5 text-xs leading-relaxed text-ink-2">
+              <AlertTriangle size={14} className="mt-0.5 shrink-0 text-warn" aria-hidden="true" />
+              <span>The uploaded image doesn't look like side-scan sonar, so this detection is unreliable.</span>
+            </p>
+          )}
           {d.shadowPenalized && (
             <p className="mt-3 flex items-start gap-2 border-l-2 border-warn bg-warn/5 px-2 py-1.5 text-xs leading-relaxed text-ink-2">
               <AlertTriangle size={14} className="mt-0.5 shrink-0 text-warn" aria-hidden="true" />

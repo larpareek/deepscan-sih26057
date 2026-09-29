@@ -198,6 +198,29 @@ def preprocess(
     return enhanced, mask
 
 
+def sonar_input_warning(image: np.ndarray) -> str | None:
+    """Flag inputs that are clearly not side-scan sonar (e.g. a colour photograph).
+
+    SSS waterfalls are single-channel, or rendered with a one-hue palette (bronze/copper).
+    Many saturated pixels spread across many hues means a natural colour image, on which
+    the detector's output is meaningless. Returns a human-readable warning or None.
+    """
+    if image.ndim != 3 or image.shape[2] < 3:
+        return None
+    hsv = cv2.cvtColor(to_uint8(image[..., :3]), cv2.COLOR_BGR2HSV)
+    saturated = hsv[..., 1] > 60
+    if saturated.mean() < 0.1:
+        return None
+    hue = hsv[..., 0][saturated].astype(np.float32) * (np.pi / 90)  # OpenCV hue is 0-179
+    coherence = float(np.hypot(np.cos(hue).mean(), np.sin(hue).mean()))  # 1 = single hue
+    if coherence >= 0.8:
+        return None
+    return (
+        "input is a multi-colour image (photo or false-colour render), not a sonar waterfall; "
+        "detections are unreliable"
+    )
+
+
 def preprocess_file(src_path: str, dst_path: str, **kwargs) -> np.ndarray:
     """Load an image from disk (e.g. data/raw), preprocess it, and save (e.g. data/processed)."""
     image = cv2.imread(src_path, cv2.IMREAD_UNCHANGED)

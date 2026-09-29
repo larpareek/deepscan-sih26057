@@ -112,7 +112,7 @@ async function demoScanFiles(layers, strength) {
   };
 }
 
-const EMPTY_LIVE = { src: null, size: null, fileName: null, detections: [], track: [], pingCoords: null, meta: null, jobId: null, detectedAt: null, nominal: false };
+const EMPTY_LIVE = { src: null, size: null, fileName: null, detections: [], track: [], pingCoords: null, meta: null, jobId: null, detectedAt: null, nominal: false, inputWarning: null };
 
 export default function App() {
   // "empty" (no data) -> "demo" (synthetic survey) or "live" (imported scan + backend)
@@ -196,6 +196,7 @@ export default function App() {
         jobId: null,
         detectedAt: null,
         nominal: false,
+        inputWarning: null,
         // Metadata from a previous image no longer applies
         ...(hasMetadata ? {} : { pingCoords: null, track: [], meta: null }),
       }));
@@ -370,12 +371,13 @@ export default function App() {
       setPhase("detect");
       const [res] = await Promise.all([runDetection(job_id, DEMO_STRENGTH[method]), minDisplay]);
       const detectedAt = utc();
-      const nextLive = { ...liveRef.current, detections: res.detections, jobId: job_id, detectedAt };
+      const nextLive = { ...liveRef.current, detections: res.detections, jobId: job_id, detectedAt, inputWarning: res.input_warning ?? null };
       setLive(nextLive);
       const t = { upload: uploadMs, ...res.timing_ms };
       setTimings(t);
       touch();
       addLog("info", `Processed in ${Math.round(Object.values(res.timing_ms).reduce((a, b) => a + b, 0))} ms (${despeckleMethod(DEMO_STRENGTH[method]).toUpperCase()})`);
+      if (res.input_warning) addLog("warn", `Input check: ${res.input_warning}`);
       addLog(res.count ? "alert" : "ok", `${res.count} objects classified and geotagged`);
       pushHistory({ id: job_id, kind: "live", time: stamp(), name: `JOB-${job_id.slice(0, 6).toUpperCase()}`, count: res.count, snapshot: nextLive, timings: t });
     } catch (e) {
@@ -467,7 +469,7 @@ export default function App() {
           <div className="order-last border-t border-line lg:order-none lg:row-span-2 lg:border-r lg:border-t-0 xl:row-span-1 xl:min-h-0 xl:overflow-y-auto">
             <ConsolePanel
               scanProps={{
-                scan, files, fileChecks, onImport: openPicker, onFiles, onRun: () => onRun(), canRun, runReason, runNote, busy, error,
+                scan, files, fileChecks, onImport: openPicker, onFiles, onRun: () => onRun(), canRun, runReason, runNote, busy, error, inputWarning: isLive ? live.inputWarning : null,
                 onLoadDemo, history, currentScanId, onRestore,
                 onRunDemoLive, canRunDemoLive: backend.online && isDemo, onDownloadSample,
               }}

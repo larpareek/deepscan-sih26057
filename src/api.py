@@ -43,7 +43,7 @@ from pydantic import BaseModel, Field
 
 from src.geotagging import GeotaggingEngine, SonarMetadata
 from src.inference import DEFAULT_WEIGHTS, MarineDebrisDetector
-from src.preprocessing import preprocess
+from src.preprocessing import preprocess, sonar_input_warning
 
 ROOT = Path(__file__).resolve().parent.parent
 RAW_DIR = ROOT / "data" / "raw"
@@ -65,6 +65,7 @@ class Job:
     created: float = field(default_factory=time.time)
     status: Literal["uploaded", "done"] = "uploaded"
     report_dir: Path | None = None
+    input_warning: str | None = None
 
 
 class DetectRequest(BaseModel):
@@ -147,6 +148,7 @@ def _run_pipeline(job: Job, req: DetectRequest) -> dict:
         "job_id": job.job_id,
         **report,
         "count": len(detections),
+        "input_warning": job.input_warning,
         "timing_ms": {
             "preprocess": round((t1 - t0) * 1000, 1),
             "inference": round((t2 - t1) * 1000, 1),
@@ -197,12 +199,13 @@ async def upload(
         raise HTTPException(422, f"metadata has {parsed.num_pings} ping_coords but image has {h} rows")
 
     job_id = uuid.uuid4().hex
-    state.jobs[job_id] = Job(job_id, decoded, meta)
+    warning = await run_in_threadpool(sonar_input_warning, decoded)
+    state.jobs[job_id] = Job(job_id, decoded, meta, input_warning=warning)
     # Persist raw inputs without blocking the response.
     task = asyncio.create_task(run_in_threadpool(_save_upload, RAW_DIR / job_id, f"image{ext}", image_bytes, meta))
     _background_tasks.add(task)
     task.add_done_callback(_background_tasks.discard)
-    return {"job_id": job_id, "image_shape": [h, w], "num_pings": parsed.num_pings}
+    return {"job_id": job_id, "image_shape": [h, w], "num_pings": parsed.num_pings, "input_warning": warning}
 
 
 @app.post("/detect")
