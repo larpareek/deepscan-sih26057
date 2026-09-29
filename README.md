@@ -201,7 +201,7 @@ The shipped detector, `models/seascan-yolov8n.pt`, is YOLOv8n fine-tuned for 40 
 |---|---|---|---|---|---|---|
 | YOLOv8n SEASCAN (PyTorch) | SEASCAN-Synth val (240 images, 656 objects) | 0.995 | 0.940 | 0.999 | 0.999 | ≈ 15 |
 | YOLOv8n SEASCAN (ONNX, edge) | same weights, onnxruntime | n/a | n/a | n/a | n/a | ≈ 13 |
-| YOLOv8n SEASCAN | Real SSS surveys (AI4Shipwrecks etc.) | TBD | TBD | TBD | TBD | TBD |
+| YOLOv8n SEASCAN | Real SSS surveys (AI4Shipwrecks etc.) | planned | planned | planned | planned | planned |
 
 Per class (mAP@50-95): shipwreck 0.975 · pipe 0.960 · ghost_net 0.951 · anomaly 0.873. On 30 target-free synthetic scenes it produced 0 false positives.
 
@@ -223,10 +223,9 @@ Per class (mAP@50-95): shipwreck 0.975 · pipe 0.960 · ghost_net 0.951 · anoma
 
 | Dataset | Content | Link |
 |---|---|---|
-| NOAA (NCEI / Office of Coast Survey) | Hydrographic side-scan sonar surveys | <https://www.ncei.noaa.gov/> (verify) |
-| USGS Coastal & Marine Hazards and Resources Program | Sonar and seabed-mapping datasets | <https://www.usgs.gov/programs/cmhrp> (verify) |
-| AquaScan-1K | Underwater sonar imagery | TBD <!-- FILL BEFORE SUBMISSION --> |
-| AI4Shipwrecks | Labelled side-scan sonar shipwreck imagery | TBD <!-- FILL BEFORE SUBMISSION --> |
+| NOAA (NCEI / Office of Coast Survey) | Hydrographic side-scan sonar surveys | <https://www.ncei.noaa.gov/> |
+| USGS Coastal & Marine Hazards and Resources Program | Sonar and seabed-mapping datasets | <https://www.usgs.gov/programs/cmhrp> |
+| AI4Shipwrecks (University of Michigan, NOAA-funded) | Labelled side-scan sonar shipwreck imagery | <https://umfieldrobotics.github.io/ai4shipwrecks/> |
 
 ## Roadmap
 
