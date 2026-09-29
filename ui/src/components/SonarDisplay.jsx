@@ -138,7 +138,10 @@ function EmptyDisplay({ onImport, onLoadDemo, onFiles }) {
           </button>
         </div>
         <p className="mt-4 text-xs text-ink-3">
-          Waterfall image (PNG/JPG) + <Term term="ping header">ping header</Term> metadata (JSON). Drop files here.
+          Waterfall image (PNG/JPG), optionally with <Term term="ping header">ping header</Term> metadata (JSON). Drop files here.
+        </p>
+        <p className="mt-6 border-t border-line pt-3 font-mono text-2xs text-ink-3">
+          Smart India Hackathon · SIH26057 · MoES / NIOT · Team BLACK SWANS
         </p>
       </div>
     </div>
@@ -194,25 +197,25 @@ export default function SonarDisplay({
   return (
     <section className="pane h-full" aria-labelledby="sonar-h">
       <div className="pane-head">
-        <h1 id="sonar-h" ref={headingRef} tabIndex={-1} className="pane-title focus:outline-none">
+        <h1 id="sonar-h" ref={headingRef} tabIndex={-1} className="pane-title shrink-0 whitespace-nowrap focus:outline-none">
           Sonar display
         </h1>
         {geo && (
           <>
-            <span className="hidden font-mono text-2xs text-ink-3 md:inline" aria-label="Port on the left, starboard on the right">
+            <span className="hidden whitespace-nowrap font-mono text-2xs text-ink-3 2xl:inline" aria-label="Port on the left, starboard on the right">
               PORT <span className="text-ink-2">◂ ▸</span> STBD
             </span>
-            <dl className="hidden items-center gap-4 font-mono text-2xs text-ink-3 md:flex">
+            <dl className="hidden items-center gap-4 whitespace-nowrap font-mono text-2xs text-ink-3 md:flex">
               <div className="flex gap-1.5"><dt><Term term="swath width">SWATH</Term></dt><dd className="text-ink-2">{geo.swathM} m</dd></div>
               <div className="flex gap-1.5"><dt><Term term="ping">PINGS</Term></dt><dd className="text-ink-2">{geo.heightPx}</dd></div>
-              <div className="hidden gap-1.5 lg:flex"><dt>Δ PING</dt><dd className="text-ink-2">{geo.pingSpacingM.toFixed(2)} m</dd></div>
+              <div className="hidden gap-1.5 2xl:flex"><dt>Δ PING</dt><dd className="text-ink-2">{geo.pingSpacingM.toFixed(2)} m</dd></div>
             </dl>
           </>
         )}
         {/* Display controls only once there is something to display */}
         <div className={`ml-auto flex items-center gap-1 ${src ? "" : "invisible"}`}>
           {showColorbar && (
-            <div className="seg mr-2" role="group" aria-label="Display palette">
+            <div className="seg mr-2 hidden sm:inline-flex" role="group" aria-label="Display palette">
               {[["gray", "Gray"], ["bronze", "Bronze"]].map(([key, label]) => (
                 <button key={key} type="button" aria-pressed={palette === key} onClick={() => onPalette(key)} className="!h-6">
                   {label}
@@ -220,13 +223,13 @@ export default function SonarDisplay({
               ))}
             </div>
           )}
-          <button type="button" className="btn btn-ghost h-7 px-2 text-xs" aria-pressed={showGrid} onClick={() => setShowGrid((v) => !v)}>
+          <button type="button" className="btn btn-ghost h-7 px-2 text-xs" aria-label="Grid" aria-pressed={showGrid} onClick={() => setShowGrid((v) => !v)}>
             <Grid3x3 size={14} aria-hidden="true" />
-            Grid
+            <span className="hidden sm:inline" aria-hidden="true">Grid</span>
           </button>
-          <button type="button" className="btn btn-ghost h-7 px-2 text-xs" aria-pressed={showLabels} onClick={() => setShowLabels((v) => !v)}>
+          <button type="button" className="btn btn-ghost h-7 px-2 text-xs" aria-label="Labels" aria-pressed={showLabels} onClick={() => setShowLabels((v) => !v)}>
             <Tag size={14} aria-hidden="true" />
-            Labels
+            <span className="hidden sm:inline" aria-hidden="true">Labels</span>
           </button>
         </div>
       </div>

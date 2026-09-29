@@ -180,3 +180,26 @@ export function renderSonar({ width, height, clean, speckle }, strength = 50, pa
   ctx.putImageData(img, 0, 0);
   return canvas.toDataURL("image/jpeg", 0.9);
 }
+
+/**
+ * Raw return intensity (no display palette) as a PNG Blob: the same signal the backend
+ * receives from a real sonar export, and what the Python training generator produces.
+ */
+export function renderSonarPng({ width, height, clean, speckle }, strength = 50) {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  const img = ctx.createImageData(width, height);
+  const keep = 1 - Math.min(Math.max(strength, 0), 100) / 100;
+  const px = img.data;
+  for (let i = 0; i < clean.length; i++) {
+    const v = clean[i] * (1 + (speckle[i] - 1) * keep);
+    const g = Math.max(0, Math.min(255, Math.round(Math.pow(Math.min(v, 1), 0.85) * 255)));
+    const o = i * 4;
+    px[o] = px[o + 1] = px[o + 2] = g;
+    px[o + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+}

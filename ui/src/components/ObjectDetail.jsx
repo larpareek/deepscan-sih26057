@@ -3,7 +3,7 @@ import { AlertTriangle } from "lucide-react";
 import { fmtLat, fmtLon } from "../lib/geo";
 import { Field, StatusTag, Term } from "./ui";
 
-export default function ObjectDetail({ d, detectedAt, threshold }) {
+export default function ObjectDetail({ d, detectedAt, threshold, georeferenced = true }) {
   return (
     <section className="pane shrink-0" aria-labelledby="obj-h">
       <div className="pane-head">
@@ -43,8 +43,14 @@ export default function ObjectDetail({ d, detectedAt, threshold }) {
             <Field label="Size (L × W)">
               {d.dims.length.toFixed(2)} × {d.dims.width.toFixed(2)} m
             </Field>
-            <Field label="Latitude">{fmtLat(d.lat)}</Field>
-            <Field label="Longitude">{fmtLon(d.lon)}</Field>
+            {georeferenced ? (
+              <>
+                <Field label="Latitude">{fmtLat(d.lat)}</Field>
+                <Field label="Longitude">{fmtLon(d.lon)}</Field>
+              </>
+            ) : (
+              <Field label="Position">not georeferenced</Field>
+            )}
             <Field label="Bounding box">
               {d.bbox.w}×{d.bbox.h} px @ {d.bbox.x},{d.bbox.y}
             </Field>

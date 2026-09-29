@@ -22,7 +22,7 @@ import { checkHealth, despeckleMethod, reportUrl, runDetection, uploadScan } fro
 import { classStyle } from "./lib/classes";
 import { makeScanGeometry } from "./lib/geo";
 import { hazardStatus } from "./lib/hazard";
-import { buildSonarLayers, renderSonar } from "./lib/sonarSynth";
+import { buildSonarLayers, renderSonar, renderSonarPng } from "./lib/sonarSynth";
 import { enableAudio, playPing } from "./lib/sound";
 
 const stamp = () => new Date().toISOString().slice(11, 19);
@@ -41,13 +41,20 @@ function readSoundPref() {
   }
 }
 
-/** Sort dropped/picked files into the image and metadata slots. */
+/**
+ * Sort dropped/picked files into the image and metadata slots. Metadata describes one
+ * image, so a new image dropped without a JSON file clears the previous metadata.
+ */
 function sortFiles(list, current) {
   const next = { ...current };
-  for (const f of list) {
-    const name = f.name.toLowerCase();
-    if (name.endsWith(".json")) next.metadata = f;
-    else if (/\.(png|jpe?g)$/.test(name)) next.image = f;
+  const files = [...list];
+  const image = files.find((f) => /\.(png|jpe?g)$/i.test(f.name));
+  const metadata = files.find((f) => /\.json$/i.test(f.name));
+  if (image) {
+    next.image = image;
+    next.metadata = metadata ?? null;
+  } else if (metadata) {
+    next.metadata = metadata;
   }
   return next;
 }
@@ -81,7 +88,31 @@ function buildDemoReport(detections) {
   return { json: JSON.stringify(report, null, 2), csv: [header, ...rows].join("\n") };
 }
 
-const EMPTY_LIVE = { src: null, size: null, fileName: null, detections: [], track: [], pingCoords: null, meta: null, jobId: null, detectedAt: null };
+/** Ping metadata for a straight northbound track (one [lat, lon] per image row). */
+function trackMetadata(rows, start, { spacing = 0.2, altitude = 10, swath = 100, nominal = false } = {}) {
+  const dLat = spacing / 111320;
+  return {
+    ping_coords: Array.from({ length: rows }, (_, i) => [+(start[0] + i * dLat).toFixed(8), start[1]]),
+    altitude_m: altitude,
+    swath_width_m: swath,
+    timestamp: new Date().toISOString(),
+    ...(nominal ? { note: "nominal geometry: no ping metadata supplied, coordinates are not georeferenced" } : {}),
+  };
+}
+
+/** The demo leg as real files: raw-intensity PNG waterfall + matching ping metadata. */
+async function demoScanFiles(layers, strength) {
+  const png = await renderSonarPng(layers, strength);
+  const meta = trackMetadata(IMAGE_H, DEMO_META.start, {
+    spacing: DEMO_META.ping_spacing_m, altitude: DEMO_META.altitude_m, swath: DEMO_META.swath_width_m,
+  });
+  return {
+    image: new File([png], "seascan_demo_leg03.png", { type: "image/png" }),
+    metadata: new File([JSON.stringify(meta)], "seascan_demo_leg03.json", { type: "application/json" }),
+  };
+}
+
+const EMPTY_LIVE = { src: null, size: null, fileName: null, detections: [], track: [], pingCoords: null, meta: null, jobId: null, detectedAt: null, nominal: false };
 
 export default function App() {
   // "empty" (no data) -> "demo" (synthetic survey) or "live" (imported scan + backend)
@@ -103,6 +134,9 @@ export default function App() {
   const [history, setHistory] = useState([]);
   const [currentScanId, setCurrentScanId] = useState(null);
   const [live, setLive] = useState(EMPTY_LIVE);
+  // Latest live state for async flows (processing finishes after several renders)
+  const liveRef = useRef(live);
+  liveRef.current = live;
   const busy = phase !== null;
 
   const addLog = useCallback((lvl, msg) => setLog((l) => [...l.slice(-60), { t: stamp(), lvl, msg }]), []);
@@ -132,7 +166,8 @@ export default function App() {
   useEffect(() => {
     const ctl = new AbortController();
     const poll = async () => setBackend(await checkHealth(ctl.signal));
-    poll();
+    // The first request includes DNS/TLS setup; re-measure once the connection is warm
+    poll().then(() => setTimeout(poll, 800));
     const id = setInterval(poll, 10000);
     return () => {
       ctl.abort();
@@ -147,11 +182,23 @@ export default function App() {
 
   useEffect(() => {
     if (!files.image) return;
+    const hasMetadata = Boolean(files.metadata);
     // Object URLs are kept (not revoked) so scan history can restore earlier images.
     const url = URL.createObjectURL(files.image);
     const img = new Image();
     img.onload = () => {
-      setLive((s) => ({ ...s, src: url, size: { w: img.naturalWidth, h: img.naturalHeight }, fileName: files.image.name, detections: [], jobId: null, detectedAt: null }));
+      setLive((s) => ({
+        ...s,
+        src: url,
+        size: { w: img.naturalWidth, h: img.naturalHeight },
+        fileName: files.image.name,
+        detections: [],
+        jobId: null,
+        detectedAt: null,
+        nominal: false,
+        // Metadata from a previous image no longer applies
+        ...(hasMetadata ? {} : { pingCoords: null, track: [], meta: null }),
+      }));
       setMode("live");
       setSelectedId(null);
       setTimings(null);
@@ -172,6 +219,7 @@ export default function App() {
         setLive((s) => ({
           ...s,
           pingCoords: pts,
+          nominal: false,
           track: pts.filter((_, i) => i % step === 0),
           meta: { swath: meta.swath_width_m ?? 100, altitude: meta.altitude_m ?? 10, timestamp: meta.timestamp ?? null },
         }));
@@ -185,7 +233,7 @@ export default function App() {
   // Client-side import validation (the backend enforces the same rule)
   const fileChecks = useMemo(() => {
     const img = files.image && live.size ? { ok: true, text: `${live.size.w}×${live.size.h}` } : files.image ? { text: "reading" } : null;
-    let md = null;
+    let md = files.image && !files.metadata ? { text: "optional" } : null;
     if (files.metadata) {
       const n = live.pingCoords?.length;
       if (n == null) md = { text: "reading" };
@@ -227,11 +275,11 @@ export default function App() {
           // No usable metadata yet: nominal 0.2 m ping spacing so the axes still read in metres
           start: ok ? undefined : [0, 0], pingSpacingM: 0.2,
         }),
-        georeferenced: ok,
+        georeferenced: ok && !live.nominal,
       };
     }
     return null;
-  }, [isDemo, isLive, live.size, live.pingCoords, live.meta]);
+  }, [isDemo, isLive, live.size, live.pingCoords, live.meta, live.nominal]);
 
   // ---- Detections: enrich with status + position along/across track, then filter
   const allDetections = useMemo(() => {
@@ -300,20 +348,29 @@ export default function App() {
   };
 
   // ---- Processing pipeline: POST /upload -> POST /detect
-  const onRun = async () => {
+  const onRun = async (override) => {
+    const f = override ?? files;
     setPhase("upload");
     setError(null);
     const minDisplay = new Promise((r) => setTimeout(r, MIN_PROCESSING_MS));
     try {
+      let metadata = f.metadata;
+      if (!metadata) {
+        // No ping metadata: process with a nominal track so detection still runs; flagged as not georeferenced
+        const meta = trackMetadata(liveRef.current.size.h, [0, 0], { nominal: true });
+        metadata = new File([JSON.stringify(meta)], "nominal_metadata.json", { type: "application/json" });
+        setLive((s) => ({ ...s, pingCoords: meta.ping_coords, track: [], meta: { swath: 100, altitude: 10 }, nominal: true }));
+        addLog("warn", "No metadata: using nominal geometry (not georeferenced)");
+      }
       addLog("info", "Uploading scan to processing API");
       const t0 = performance.now();
-      const { job_id } = await uploadScan(files.image, files.metadata);
+      const { job_id } = await uploadScan(f.image, metadata);
       const uploadMs = performance.now() - t0;
       addLog("ok", `Job ${job_id.slice(0, 8)} accepted`);
       setPhase("detect");
       const [res] = await Promise.all([runDetection(job_id, DEMO_STRENGTH[method]), minDisplay]);
       const detectedAt = utc();
-      const nextLive = { ...live, detections: res.detections, jobId: job_id, detectedAt };
+      const nextLive = { ...liveRef.current, detections: res.detections, jobId: job_id, detectedAt };
       setLive(nextLive);
       const t = { upload: uploadMs, ...res.timing_ms };
       setTimings(t);
@@ -327,6 +384,21 @@ export default function App() {
     } finally {
       setPhase(null);
     }
+  };
+
+  // Demo waterfall -> deployed pipeline: shows the real model on the same scene
+  const onRunDemoLive = async () => {
+    layersRef.current ??= buildSonarLayers(IMAGE_W, IMAGE_H, DEMO_TARGETS);
+    const f = await demoScanFiles(layersRef.current, DEMO_STRENGTH[method]);
+    setFiles(f);
+    addLog("info", "Sending demo waterfall to the live model");
+    await onRun(f);
+  };
+
+  const onDownloadSample = async () => {
+    layersRef.current ??= buildSonarLayers(IMAGE_W, IMAGE_H, DEMO_TARGETS);
+    const f = await demoScanFiles(layersRef.current, DEMO_STRENGTH[method]);
+    for (const file of [f.image, f.metadata]) downloadBlob(file, file.name, file.type);
   };
 
   const onDownload = (format) => {
@@ -346,14 +418,15 @@ export default function App() {
       ? { id: scanId, source: live.fileName, width: live.size.w, height: live.size.h, altitude: live.meta?.altitude ?? "—" }
       : null;
   const detectedAt = isDemo ? DEMO_META.timestamp.replace("T", " ").replace("Z", " UTC") : live.detectedAt ?? "—";
-  const canRun = backend.online && files.image && files.metadata && fileChecks.metadata?.ok;
+  const canRun = Boolean(backend.online && files.image && fileChecks.image?.ok && (!files.metadata || fileChecks.metadata?.ok));
   const runReason = !backend.online
     ? "Processing API offline. The demo survey is available."
-    : !files.image || !files.metadata
-      ? "Import a waterfall image and its metadata."
+    : !files.image
+      ? "Import a waterfall image (ping metadata optional)."
       : fileChecks.metadata?.warn
         ? "Metadata ping count must match the image height."
         : "";
+  const runNote = canRun && !files.metadata ? "No metadata: detection runs, but positions are nominal (not georeferenced)." : "";
   const busyStage = phase === "upload" ? "UPLOADING SCAN" : "PREPROCESS → YOLOv8n → GEOTAG";
 
   return (
@@ -394,8 +467,9 @@ export default function App() {
           <div className="order-last border-t border-line lg:order-none lg:row-span-2 lg:border-r lg:border-t-0 xl:row-span-1 xl:min-h-0 xl:overflow-y-auto">
             <ConsolePanel
               scanProps={{
-                scan, files, fileChecks, onImport: openPicker, onFiles, onRun, canRun, runReason, busy, error,
+                scan, files, fileChecks, onImport: openPicker, onFiles, onRun: () => onRun(), canRun, runReason, runNote, busy, error,
                 onLoadDemo, history, currentScanId, onRestore,
+                onRunDemoLive, canRunDemoLive: backend.online && isDemo, onDownloadSample,
               }}
               detectionProps={{
                 threshold, onThreshold: setThreshold, method, onMethod: setMethod,
@@ -441,13 +515,13 @@ export default function App() {
           </div>
 
           <div className="flex flex-col border-line bg-surface lg:col-start-2 xl:col-start-auto xl:min-h-0 xl:border-l">
-            <ObjectDetail d={selected} detectedAt={detectedAt} threshold={threshold} />
+            <ObjectDetail d={selected} detectedAt={detectedAt} threshold={threshold} georeferenced={Boolean(geo?.georeferenced)} />
             <div className="flex min-h-[320px] flex-1 flex-col border-t border-line">
               <SpatialPanel
                 plannedTrack={isDemo ? DEMO_TRACK : []}
-                doneTrack={isDemo ? DEMO_TRACK_DONE : isLive ? live.track : []}
-                auvPos={isDemo ? DEMO_AUV_POS : isLive ? live.track[live.track.length - 1] ?? null : null}
-                detections={detections}
+                doneTrack={isDemo ? DEMO_TRACK_DONE : isLive && !live.nominal ? live.track : []}
+                auvPos={isDemo ? DEMO_AUV_POS : isLive && !live.nominal ? live.track[live.track.length - 1] ?? null : null}
+                detections={geo?.georeferenced ? detections : []}
                 activeId={activeId}
                 selected={selected}
                 onHover={setHoverId}

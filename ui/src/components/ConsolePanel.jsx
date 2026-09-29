@@ -29,7 +29,7 @@ function FileRow({ label, file, status }) {
   );
 }
 
-function ScanSection({ scan, files, fileChecks, onImport, onFiles, onRun, canRun, runReason, busy, error, onLoadDemo, history, currentScanId, onRestore }) {
+function ScanSection({ scan, files, fileChecks, onImport, onFiles, onRun, canRun, runReason, runNote, busy, error, onLoadDemo, history, currentScanId, onRestore, onRunDemoLive, canRunDemoLive, onDownloadSample }) {
   const hintId = useId();
   return (
     <section className="section" aria-labelledby="sec-scan">
@@ -59,13 +59,18 @@ function ScanSection({ scan, files, fileChecks, onImport, onFiles, onRun, canRun
         <div className="flex items-center justify-between gap-2">
           <div>
             <div className="text-xs font-medium text-ink">Import sonar scan</div>
-            <div id={hintId} className="text-2xs text-ink-3">PNG/JPG waterfall + JSON <Term term="ping header">ping metadata</Term></div>
+            <div id={hintId} className="text-2xs text-ink-3">PNG/JPG waterfall (+ optional <Term term="ping header">ping metadata</Term> JSON)</div>
           </div>
           <button type="button" className="btn h-7 px-2 text-xs" onClick={onImport} aria-describedby={hintId}>
             <FileUp size={14} aria-hidden="true" />
             Browse
           </button>
         </div>
+        {!files.image && !files.metadata && (
+          <button type="button" onClick={onDownloadSample} className="hit mt-1.5 text-2xs text-accent underline-offset-2 hover:underline">
+            No data? Download a sample scan (PNG + JSON)
+          </button>
+        )}
         {(files.image || files.metadata) && (
           <table className="mt-2 w-full border-t border-line/60" aria-label="Import status">
             <tbody>
@@ -87,6 +92,16 @@ function ScanSection({ scan, files, fileChecks, onImport, onFiles, onRun, canRun
       </div>
       {!canRun && !busy && (
         <p id={`${hintId}-why`} className="mt-1.5 text-2xs text-ink-3">{runReason}</p>
+      )}
+      {runNote && !busy && <p className="mt-1.5 text-2xs text-warn">{runNote}</p>}
+      {canRunDemoLive && (
+        <div className="mt-3 border-t border-line pt-3">
+          <button type="button" className="btn w-full" onClick={onRunDemoLive} disabled={busy}>
+            <Play size={14} aria-hidden="true" />
+            Run live model on this waterfall
+          </button>
+          <p className="mt-1.5 text-2xs text-ink-3">Sends the demo waterfall through the deployed detection pipeline.</p>
+        </div>
       )}
       {error && (
         <p role="alert" className="mt-2 flex items-start gap-1.5 border-l-2 border-crit bg-crit/5 px-2 py-1.5 text-xs text-crit-text">
