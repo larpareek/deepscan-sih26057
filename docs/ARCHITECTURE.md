@@ -42,7 +42,7 @@ The steps run in this order on purpose. Filling dropouts first stops blank pings
 - Returns `Detection(bbox, label, confidence 0–100, class_id, shadow_fraction, shadow_penalized)`.
 - `scripts/export_onnx.py` exports to ONNX (opset 12, optional FP16 and dynamic shapes) and runs one test pass with onnxruntime to confirm it works.
 
-> The shipped weights are COCO-pretrained. The target classes (`shipwreck`, `pipe`, `ghost_net`, `anomaly`) require fine-tuning on labelled SSS data.
+> The shipped weights (`models/seascan-yolov8n.pt`) are YOLOv8n fine-tuned on SEASCAN-Synth, a synthetic side-scan dataset (`scripts/generate_synthetic.py`, `scripts/train_detector.py`): mAP@50 0.995 / mAP@50-95 0.940 on 240 synthetic validation images. Real-survey accuracy is not yet measured. If the file is missing, the API falls back to `yolov8n.pt`.
 
 ### 3. Geotagging (`src/geotagging.py`, `GeotaggingEngine`)
 

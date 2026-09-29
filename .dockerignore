@@ -4,6 +4,7 @@ ui
 docs
 data
 models/*.pt
+!models/seascan-yolov8n.pt
 models/*.onnx
 **/__pycache__
 **/node_modules

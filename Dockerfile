@@ -23,10 +23,11 @@ RUN pip install torch torchvision --index-url https://download.pytorch.org/whl/c
 
 COPY src ./src
 COPY scripts ./scripts
+COPY models ./models
 
-# Bake the weights into the image so cold starts don't download them
-RUN mkdir -p models data/raw data/processed \
-    && python -c "from ultralytics import YOLO; YOLO('models/yolov8n.pt')"
+# Ship the SEASCAN detector in the image and check it loads at build time
+RUN mkdir -p data/raw data/processed \
+    && python -c "from src.inference import DEFAULT_WEIGHTS; from ultralytics import YOLO; print('weights:', DEFAULT_WEIGHTS, YOLO(str(DEFAULT_WEIGHTS)).names)"
 
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s \

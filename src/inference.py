@@ -14,11 +14,12 @@ from ultralytics import YOLO
 from src.preprocessing import to_uint8
 
 MODELS_DIR = Path(__file__).resolve().parent.parent / "models"
-DEFAULT_WEIGHTS = MODELS_DIR / "yolov8n.pt"
+# SEASCAN detector: YOLOv8n fine-tuned on synthetic side-scan data (scripts/train_detector.py).
+# Falls back to the COCO-pretrained yolov8n.pt (auto-downloaded) if it is missing.
+SEASCAN_WEIGHTS = MODELS_DIR / "seascan-yolov8n.pt"
+DEFAULT_WEIGHTS = SEASCAN_WEIGHTS if SEASCAN_WEIGHTS.exists() else MODELS_DIR / "yolov8n.pt"
 
-# Target classes for the fine-tuned model. The stock yolov8n.pt is trained on
-# COCO (person, car, ...) and must be fine-tuned on labelled SSS data before
-# these labels mean anything; until then the model's own names are used.
+# Classes of the SEASCAN detector (the stock COCO model reports its own names instead)
 SSS_CLASSES = ["shipwreck", "pipe", "ghost_net", "anomaly"]
 
 

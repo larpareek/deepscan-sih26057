@@ -26,6 +26,8 @@ npm-debug.log*
 
 # ---- Models & data (large / generated) ----
 *.pt
+# ...except the trained SEASCAN detector (6 MB), so deployments are reproducible
+!models/seascan-yolov8n.pt
 *.onnx
 *.tif
 *.tiff
