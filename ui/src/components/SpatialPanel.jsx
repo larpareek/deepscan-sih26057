@@ -1,4 +1,4 @@
-// DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
+// SEASCAN: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 import { lazy, Suspense, useState } from "react";
 import { fmtLat, fmtLon } from "../lib/geo";
 import { Term } from "./ui";

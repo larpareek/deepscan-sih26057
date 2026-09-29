@@ -1,4 +1,4 @@
-"""DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057).
+"""SEASCAN: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057).
 
 FastAPI service exposing the SSS preprocessing -> detection -> geotagging pipeline.
 
@@ -51,7 +51,7 @@ PROCESSED_DIR = ROOT / "data" / "processed"
 WEIGHTS = os.environ.get("SSS_WEIGHTS", str(DEFAULT_WEIGHTS))
 DEVICE = os.environ.get("SSS_DEVICE")  # e.g. "cpu", "0" for first GPU; None = auto
 MAX_UPLOAD_BYTES = int(os.environ.get("SSS_MAX_UPLOAD_MB", "50")) * 1024 * 1024
-# Comma-separated allowed origins, e.g. "https://deepscan.vercel.app". "*" allows any (dev default).
+# Comma-separated allowed origins, e.g. "https://deepscan-sih26057-lilac.vercel.app". "*" allows any (dev default).
 CORS_ORIGINS = [o.strip() for o in os.environ.get("SSS_CORS_ORIGINS", "*").split(",") if o.strip()]
 ALLOWED_IMAGE_TYPES = {".png", ".jpg", ".jpeg"}
 
@@ -97,7 +97,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="SSS Marine Debris Detection", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="SEASCAN API", version="0.1.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_methods=["*"], allow_headers=["*"])
 
 

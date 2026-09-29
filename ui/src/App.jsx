@@ -1,4 +1,4 @@
-// DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
+// SEASCAN: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import ConsolePanel from "./components/ConsolePanel";
 import DetectionsTable from "./components/DetectionsTable";
@@ -29,7 +29,7 @@ const stamp = () => new Date().toISOString().slice(11, 19);
 const utc = (d = new Date()) => `${d.toISOString().slice(0, 19).replace("T", " ")} UTC`;
 // The backend can answer in ~60 ms; keep the processing state visible long enough to read.
 const MIN_PROCESSING_MS = 1200;
-const SOUND_KEY = "deepscan.sound";
+const SOUND_KEY = "seascan.sound";
 // Despeckle method -> strength used to render the synthetic demo waterfall
 const DEMO_STRENGTH = { median: 30, lee: 60, nlm: 90 };
 

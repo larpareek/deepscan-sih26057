@@ -1,16 +1,25 @@
-# DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection
+# SEASCAN: AI-Powered Automated Underwater Marine Debris and Anomaly Detection System
 
 > **SIH Problem Statement ID: `SIH26057`**
-> **Ministry of Earth Sciences (MoES) / National Institute of Ocean Technology (NIOT)** · **Theme:** Disaster Management · **Category:** Software
+>
+> **Ministry:** Ministry of Earth Sciences (MoES) / National Institute of Ocean Technology (NIOT)
+> **Theme:** Disaster Management | **Category:** Software
 
-**Team:** `<TEAM NAME>` <!-- FILL BEFORE SUBMISSION -->
+**Team Name:** BLACK SWANS
 
 <!-- FILL BEFORE SUBMISSION: team members -->
 | Member | Role |
 |---|---|
 | `<Name>` | `<Role>` |
 
-**Live demo:** <https://deepscan-sih26057-lilac.vercel.app> · **API:** <https://deepscan-api-production.up.railway.app/docs>
+### Live Demo
+
+| | URL |
+|---|---|
+| **Web app (Vercel)** | <https://deepscan-sih26057-lilac.vercel.app> |
+| **Backend API (Railway)** | <https://deepscan-api-production.up.railway.app> · interactive docs: [`/docs`](https://deepscan-api-production.up.railway.app/docs) |
+
+Click **Load demo survey** for an instant walkthrough (runs in the browser), or import a sonar image and its ping metadata to run the full pipeline on the live backend.
 
 ---
 
@@ -18,12 +27,12 @@
 
 Abandoned, lost and discarded fishing gear, known as **ghost nets**, keeps catching marine life for years, damages coral and seabed habitats, fouls propellers and intakes, and makes up a large share of the plastic in the ocean. Ghost nets, wrecks, exposed pipelines and other debris on the seabed are also hazards for navigation, offshore infrastructure and post-disaster recovery. Finding them across large survey areas is slow: an expert has to review hours of sonar imagery by hand.
 
-**Side-Scan Sonar (SSS)** is the standard tool for imaging the seabed from an AUV or towfish, but its imagery is difficult to interpret automatically. Images are covered in multiplicative **acoustic speckle**, brightness falls off strongly with range, and vehicle pitch, roll and surfacing cause **data dropouts**. Every real object casts an **acoustic shadow**, which is useful evidence but also a common source of false positives. DeepScan cleans the imagery, detects debris and anomalies with a lightweight model, rejects implausible detections, and turns each one into a **geotagged, sized, exportable report**.
+**Side-Scan Sonar (SSS)** is the standard tool for imaging the seabed from an AUV or towfish, but its imagery is difficult to interpret automatically. Images are covered in multiplicative **acoustic speckle**, brightness falls off strongly with range, and vehicle pitch, roll and surfacing cause **data dropouts**. Every real object casts an **acoustic shadow**, which is useful evidence but also a common source of false positives. SEASCAN cleans the imagery, detects debris and anomalies with a lightweight model, rejects implausible detections, and turns each one into a **geotagged, sized, exportable report**.
 
 ## Key Features
 
 - **Object detection:** a YOLOv8n detector for shipwrecks, pipelines, ghost nets and general anomalies. It's small enough to run at the edge.
-- **Confidence scoring:** confidence is shown as 0–100% with High / Medium / Low bands (icon + text, not colour alone), and there's an adjustable threshold. Detections that sit inside an acoustic shadow have their score halved to cut false positives.
+- **Confidence scoring and hazard status:** each detection carries a 0–100% confidence with an adjustable threshold, and a status of CRITICAL / WARNING / REVIEW shown as text and colour. Detections that sit inside an acoustic shadow have their score halved to cut false positives.
 - **Geotagging engine:** pixel coordinates are converted to latitude/longitude using the AUV's ping positions and heading, with slant-range correction. Each object's size is estimated in metres. Reports export as **JSON and CSV**.
 - **SSS-specific preprocessing:** dropout interpolation, then speckle removal (Lee filter / Non-Local Means / median), then CLAHE contrast enhancement.
 - **Edge-ready via ONNX:** a one-command export to ONNX (opset 12), checked with onnxruntime. The ONNX file loads with the same detector class.
@@ -33,10 +42,10 @@ Abandoned, lost and discarded fishing gear, known as **ghost nets**, keeps catch
 
 | Layer | Technologies |
 |---|---|
-| ML / CV | Python, **YOLOv8** (Ultralytics), OpenCV, NumPy, **ONNX** / ONNX Runtime |
-| Backend | **FastAPI**, Uvicorn, Pydantic |
-| Frontend | **React**, **Vite**, **Tailwind CSS**, **Leaflet** (react-leaflet), Radix UI, Lucide icons |
-| Tooling | Ruff, GitHub Actions |
+| **AI / ML** | Python 3.12, **PyTorch** (CPU build), **YOLOv8** (Ultralytics, `yolov8n`), **OpenCV**, NumPy, **ONNX** + ONNX Runtime (edge export) |
+| **Backend** | **FastAPI**, **Uvicorn**, **Pydantic**, python-multipart |
+| **Frontend** | **React** 18, **Vite**, **Tailwind CSS**, **Leaflet** (react-leaflet), Radix UI (tooltips, popovers), Lucide icons, IBM Plex type |
+| **Deployment** | **Vercel** (frontend), **Railway** (backend, Docker image), **GitHub Actions** (CI: Ruff lint + frontend build) |
 
 ## Architecture
 
@@ -105,7 +114,18 @@ python scripts/export_onnx.py --weights models/yolov8n.pt --imgsz 640
 
 ## Deployment
 
-The frontend and backend deploy **separately**. The React dashboard is a static site on **Vercel**; the FastAPI + YOLOv8 backend runs on **Render** or **Railway**. They're connected by one environment variable, `VITE_API_BASE`.
+The frontend and backend deploy **separately**. The React dashboard is a static site on **Vercel**; the FastAPI + YOLOv8 backend runs on **Railway** (Render also supported). They're connected by one environment variable, `VITE_API_BASE`.
+
+**Current live deployment**
+
+| Part | Host | Details |
+|---|---|---|
+| Frontend | Vercel | Project root `ui/`, Vite preset, auto-deploys from `main`; `VITE_API_BASE` = the Railway URL |
+| Backend | Railway | Service `deepscan-api` built from the `Dockerfile`; `SSS_CORS_ORIGINS` = the Vercel URL |
+
+> Use the production URL above. Vercel's per-deployment preview links serve older builds, and the backend's CORS policy only accepts the production origin.
+
+To redeploy the backend after changes in `src/`: `railway up --service deepscan-api` from the repo root. Frontend changes deploy automatically on every push to `main`.
 
 ### Frontend on Vercel
 
@@ -113,7 +133,7 @@ The frontend lives in `ui/`, and **`ui/vercel.json`** holds its Vercel config (V
 
 1. On Vercel, go to **Add New → Project** and import this repository.
 2. Set **Root Directory** to `ui` and **Framework Preset** to **Vite**. For an existing project, change these under **Settings → Build and Deployment**.
-3. Under **Settings → Environment Variables**, add `VITE_API_BASE` = your backend URL (e.g. `https://deepscan-api.up.railway.app`, no trailing slash).
+3. Under **Settings → Environment Variables**, add `VITE_API_BASE` = your backend URL (e.g. `https://deepscan-api-production.up.railway.app`, no trailing slash).
 4. Click **Deploy**. The CLI alternative is `cd ui && npx vercel --prod`.
 
 > `VITE_*` variables are baked in **at build time**. Redeploy the frontend after changing `VITE_API_BASE`. If it's unset, the site still works in **demo mode**, but live detection is disabled.

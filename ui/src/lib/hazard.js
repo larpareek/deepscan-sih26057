@@ -1,4 +1,4 @@
-// DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
+// SEASCAN: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 // Operator-facing hazard status. Colour is driven by status, never by class, and every
 // status also has a text label (colour is never the only cue).
 

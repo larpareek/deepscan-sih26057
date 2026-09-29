@@ -1,4 +1,4 @@
-// DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
+// SEASCAN: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 import * as Popover from "@radix-ui/react-popover";
 import { Download, Settings } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -51,7 +51,7 @@ function SettingsMenu({ soundOn, onToggleSound }) {
               </li>
             ))}
           </ul>
-          <p className="mt-3 border-t border-line pt-2 font-mono text-2xs text-ink-3">DeepScan · SIH26057 · MoES / NIOT</p>
+          <p className="mt-3 border-t border-line pt-2 font-mono text-2xs text-ink-3">SEASCAN · SIH26057 · MoES / NIOT</p>
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
@@ -63,7 +63,7 @@ export default function TopBar({ scanId, mode, backendOnline, backendPending, bu
   return (
     <header className="flex h-12 shrink-0 items-center gap-4 border-b border-line bg-bg px-3 sm:px-4">
       <div className="flex items-baseline gap-3">
-        <span className="text-[15px] font-semibold tracking-[0.18em] text-ink">DEEPSCAN</span>
+        <span className="text-[15px] font-semibold tracking-[0.18em] text-ink">SEASCAN</span>
         <span className="hidden whitespace-nowrap text-2xs font-medium uppercase tracking-[0.14em] text-ink-3 xl:inline">
           Sonar hazard detection system
         </span>

@@ -1,4 +1,4 @@
-# DeepScan (SIH26057) backend dependencies. Pinned; tested with Python 3.12.
+# SEASCAN (SIH26057) backend dependencies. Pinned; tested with Python 3.12.
 # ultralytics pulls in torch/torchvision. For a smaller CPU-only install, first run:
 #   pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 fastapi==0.141.1

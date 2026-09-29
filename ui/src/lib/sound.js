@@ -1,4 +1,4 @@
-// DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
+// SEASCAN: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 // Soft synthesized sonar "ping" (Web Audio, no asset). Muted until the user turns it on;
 // browsers only allow audio after a user gesture, so the toggle click creates the context.
 let ctx = null;

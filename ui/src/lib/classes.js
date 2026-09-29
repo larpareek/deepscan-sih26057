@@ -1,4 +1,4 @@
-// DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
+// SEASCAN: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 // Display names for detector classes. Colour comes from hazard status (lib/hazard.js),
 // not from class, so the palette stays restrained.
 export const CLASS_STYLES = {

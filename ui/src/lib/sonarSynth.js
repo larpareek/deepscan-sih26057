@@ -1,4 +1,4 @@
-// DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
+// SEASCAN: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 // Procedural side-scan sonar waterfall for demo mode.
 // Row = ping (along-track), column = range; the centre column is nadir.
 // Produces: dark water-column gap at nadir, range-dependent gain falloff, sand

@@ -1,4 +1,4 @@
-"""DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057).
+"""SEASCAN: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057).
 
 Export YOLOv8 weights to ONNX for edge deployment (Jetson, Raspberry Pi, AUV compute).
 

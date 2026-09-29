@@ -1,4 +1,4 @@
-# DeepScan (SIH26057): tool configuration (dependencies live in requirements.txt)
+# SEASCAN (SIH26057): tool configuration (dependencies live in requirements.txt)
 [tool.ruff]
 line-length = 120
 target-version = "py311"

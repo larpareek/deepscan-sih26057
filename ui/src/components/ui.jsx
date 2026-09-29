@@ -1,4 +1,4 @@
-// DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
+// SEASCAN: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { useState } from "react";
 import { explain } from "../lib/glossary";

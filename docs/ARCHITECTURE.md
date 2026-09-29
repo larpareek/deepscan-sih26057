@@ -1,6 +1,6 @@
-# DeepScan Architecture (SIH26057)
+# SEASCAN Architecture (SIH26057)
 
-DeepScan has two independently deployable parts:
+SEASCAN has two independently deployable parts:
 
 - A **Python backend** (`src/`) that turns a side-scan sonar (SSS) image plus its ping metadata into geotagged detections.
 - A **React dashboard** (`ui/`) for reviewing them.

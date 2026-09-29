@@ -1,4 +1,4 @@
-# DeepScan (SIH26057) CI: lint the Python backend and build the React frontend.
+# SEASCAN (SIH26057) CI: lint the Python backend and build the React frontend.
 name: CI
 
 on:

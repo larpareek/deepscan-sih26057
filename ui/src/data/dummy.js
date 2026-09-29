@@ -1,4 +1,4 @@
-// DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
+// SEASCAN: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 import { bboxDimensionsM, offsetLatLon, pixelToGps } from "../lib/geo";
 
 export const IMAGE_W = 1024;
@@ -69,7 +69,7 @@ export const DEMO_DETECTIONS = DEMO_TARGETS.map((t) => {
 });
 
 export const DEMO_LOG = [
-  { t: "10:41:02", lvl: "ok", msg: "AUV-07 DEEPSCAN link established" },
+  { t: "10:41:02", lvl: "ok", msg: "AUV-07 SEASCAN link established" },
   { t: "10:41:05", lvl: "ok", msg: "SSS 900 kHz dual-channel online" },
   { t: "10:41:40", lvl: "info", msg: "Leg 3/5 started, hdg 000°" },
   { t: "10:42:11", lvl: "info", msg: "Preprocess: dropout fill, Lee, CLAHE" },

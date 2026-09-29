@@ -1,4 +1,4 @@
-"""DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057).
+"""SEASCAN: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057).
 
 Convert SSS pixel detections into geographic positions and survey reports.
 

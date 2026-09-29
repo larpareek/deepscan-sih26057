@@ -1,4 +1,4 @@
-// DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
+// SEASCAN: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 import { AlertTriangle, Check, Circle, FileUp, Loader2, Play } from "lucide-react";
 import { useId } from "react";
 import { classStyle } from "../lib/classes";

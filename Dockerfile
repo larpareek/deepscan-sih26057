@@ -1,4 +1,4 @@
-# DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
+# SEASCAN: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 # Backend image (FastAPI + YOLOv8, CPU). Works on Railway, Render, Fly.io or any Docker host.
 FROM python:3.12-slim
 

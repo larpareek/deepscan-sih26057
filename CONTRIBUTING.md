@@ -1,4 +1,4 @@
-# Contributing to DeepScan (SIH26057)
+# Contributing to SEASCAN (SIH26057)
 
 Thanks for helping! This is a hackathon project, so the process is kept light.
 
