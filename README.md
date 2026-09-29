@@ -10,7 +10,7 @@
 |---|---|
 | `<Name>` | `<Role>` |
 
-**Live demo:** `https://<your-app>.vercel.app` <!-- FILL BEFORE SUBMISSION -->
+**Live demo:** <https://deepscan-sih26057-lilac.vercel.app> · **API:** <https://deepscan-api-production.up.railway.app/docs>
 
 ---
 
