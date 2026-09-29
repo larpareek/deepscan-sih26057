@@ -36,7 +36,7 @@ function Viewport({ track, target }) {
       map.invalidateSize();
       const t = targetRef.current;
       if (t) map.setView([t.lat, t.lon], Math.max(map.getZoom(), 18), { animate: false });
-      else if (track.length > 1) map.fitBounds(track, { padding: [20, 20] });
+      else if (track.length > 1) map.fitBounds(track, { padding: [28, 28], maxZoom: 19 });
     };
     frame();
     const ro = new ResizeObserver(frame);
@@ -60,10 +60,15 @@ function CursorReadout({ onCursor }) {
 
 export default function SurveyMap({ plannedTrack, doneTrack, auvPos, detections, activeId, selected, onHover, onSelect, onCursor }) {
   const center = useMemo(() => doneTrack[doneTrack.length - 1] ?? [0, 0], [doneTrack]);
+  // Frame what this scan imaged (the active leg + its detections), not the whole planned survey
+  const focus = useMemo(() => {
+    const leg = plannedTrack.length ? doneTrack.slice(-2) : doneTrack;
+    return [...leg, ...detections.map((d) => [d.lat, d.lon])];
+  }, [plannedTrack.length, doneTrack, detections]);
 
   return (
     <div className="absolute inset-0">
-      <MapContainer center={center} zoom={17} className="h-full w-full" zoomControl attributionControl>
+      <MapContainer center={center} zoom={17} zoomSnap={0.25} zoomDelta={0.5} className="h-full w-full" zoomControl attributionControl>
         {/* OSM tiles need no API key; index.css tones them into a muted dark basemap. */}
         <TileLayer
           url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -72,7 +77,7 @@ export default function SurveyMap({ plannedTrack, doneTrack, auvPos, detections,
           maxZoom={20}
         />
         <ScaleControl position="bottomleft" imperial={false} />
-        <Viewport track={plannedTrack.length ? plannedTrack : doneTrack} target={selected} />
+        <Viewport track={focus} target={selected} />
         <CursorReadout onCursor={onCursor} />
 
         {plannedTrack.length > 1 && (
