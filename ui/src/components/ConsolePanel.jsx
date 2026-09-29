@@ -43,7 +43,7 @@ function ScanSection({ scan, files, fileChecks, onImport, onFiles, onRun, canRun
         {scan && (
           <>
             <Field label="Waterfall">{scan.width} × {scan.height} px</Field>
-            <Field label={<Term term="altitude">Altitude</Term>}>{scan.altitude} m</Field>
+            <Field label="Altitude">{scan.altitude} m</Field>
           </>
         )}
       </dl>
@@ -82,7 +82,7 @@ function ScanSection({ scan, files, fileChecks, onImport, onFiles, onRun, canRun
           {busy ? "Processing…" : "Run detection"}
         </button>
         <button type="button" className="btn" onClick={onLoadDemo}>
-          Demo
+          Load demo
         </button>
       </div>
       {!canRun && !busy && (
@@ -97,7 +97,7 @@ function ScanSection({ scan, files, fileChecks, onImport, onFiles, onRun, canRun
 
       {history.length > 0 && (
         <div className="mt-4">
-          <h3 className="label mb-1">Scan history</h3>
+          <h3 className="subhead mb-1.5">Scan history</h3>
           <ul className="max-h-32 overflow-y-auto" aria-label="Scan history, newest first">
             {[...history].reverse().map((h) => (
               <li key={h.id}>
@@ -170,7 +170,7 @@ function DetectionSection({ threshold, onThreshold, method, onMethod, classCount
       </div>
 
       <fieldset>
-        <legend className="label mb-1.5">Object classes</legend>
+        <legend className="subhead mb-1.5">Object classes</legend>
         {Object.keys(classCounts).length === 0 ? (
           <p className="text-2xs text-ink-3">No objects yet.</p>
         ) : (
@@ -189,7 +189,7 @@ function DetectionSection({ threshold, onThreshold, method, onMethod, classCount
         <label className="hit mt-1 flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-[13px] hover:bg-surface-2">
           <input type="checkbox" className="check" checked={includeShadow} onChange={(e) => onIncludeShadow(e.target.checked)} />
           <span className="flex-1 text-ink-2">
-            Include <Term term="acoustic shadow">shadowed</Term> returns
+            Include shadowed returns
           </span>
         </label>
       </fieldset>
@@ -252,7 +252,7 @@ function Vehicle() {
   return (
     <dl>
       <Field label={<Term term="depth">Depth</Term>}>{t.depth.toFixed(1)} m</Field>
-      <Field label={<Term term="altitude">Altitude</Term>}>{t.altitude.toFixed(1)} m</Field>
+      <Field label="Altitude">{t.altitude.toFixed(1)} m</Field>
       <Field label={<Term term="knots">Speed</Term>}>{t.speed.toFixed(2)} kn</Field>
       <Field label={<Term term="heading">Heading</Term>}>{String(t.heading).padStart(3, "0")}°</Field>
       <Field label={<Term term="pitch / roll">Pitch / roll</Term>}>
@@ -262,21 +262,22 @@ function Vehicle() {
   );
 }
 
-const LOG_COLORS = { ok: "text-ok", info: "text-ink-2", warn: "text-warn", alert: "text-crit-text" };
+// Red is reserved for critical hazard status, so log "alerts" are emphasised, not red
+const LOG_COLORS = { ok: "text-ink-2", info: "text-ink-2", warn: "text-warn", alert: "text-ink" };
 
 function SystemSection({ backend, mode, phase, timings, log }) {
   return (
     <section className="section border-b-0" aria-labelledby="sec-sys">
       <h2 id="sec-sys" className="section-title">System</h2>
 
-      <h3 className="label mb-1">Sensor status</h3>
+      <h3 className="subhead mb-1.5">Sensor status</h3>
       <div className="mb-3">
         <StatusRow label="Processing API" state={backend.online ? "ok" : "off"} detail={backend.online ? `${backend.latency} ms` : "OFFLINE"} />
         <StatusRow label="Detector" state={backend.online ? "ok" : "off"} detail={backend.model ?? "—"} />
         <StatusRow label="Side-scan sonar" state={mode === "empty" ? "off" : "ok"} detail={mode === "live" ? "FILE" : mode === "demo" ? "SIM · 900 kHz" : "NO DATA"} />
       </div>
 
-      <h3 className="label mb-1">Processing</h3>
+      <h3 className="subhead mb-1.5">Processing</h3>
       <div className="mb-1.5 meter" aria-hidden="true">
         {phase ? <span className="w-2/5 animate-indeterminate bg-accent" /> : <span style={{ width: timings ? "100%" : "0%", background: "#4BAF7A" }} />}
       </div>
@@ -284,13 +285,19 @@ function SystemSection({ backend, mode, phase, timings, log }) {
         <Pipeline phase={phase} timings={timings} mode={mode} />
       </div>
 
-      <h3 className="label mb-1">Vehicle</h3>
+      <h3 className="subhead mb-1.5">Vehicle</h3>
       <div className="mb-3">
-        <Vehicle />
-        <p className="mt-1 text-2xs text-ink-3">Simulated vehicle data (no live telemetry feed)</p>
+        {mode === "demo" ? (
+          <>
+            <Vehicle />
+            <p className="mt-1 text-2xs text-ink-3">Simulated for the demo survey</p>
+          </>
+        ) : (
+          <p className="text-xs text-ink-3">No vehicle telemetry feed{mode === "live" ? " (imported file)" : ""}.</p>
+        )}
       </div>
 
-      <h3 className="label mb-1">Log</h3>
+      <h3 className="subhead mb-1.5">Log</h3>
       <ol className="max-h-28 overflow-y-auto font-mono text-2xs leading-5" tabIndex={0} aria-label="System log, newest first">
         {[...log].reverse().map((l, i) => (
           <li key={i} className="flex gap-2">

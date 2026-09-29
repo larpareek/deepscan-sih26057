@@ -3,7 +3,7 @@ import { AlertTriangle } from "lucide-react";
 import { fmtLat, fmtLon } from "../lib/geo";
 import { Field, StatusTag, Term } from "./ui";
 
-export default function ObjectDetail({ d, detectedAt }) {
+export default function ObjectDetail({ d, detectedAt, threshold }) {
   return (
     <section className="pane shrink-0" aria-labelledby="obj-h">
       <div className="pane-head">
@@ -24,14 +24,15 @@ export default function ObjectDetail({ d, detectedAt }) {
 
           <div className="mb-3">
             <div className="mb-1 flex items-baseline justify-between">
-              <span className="label">
-                <Term term="confidence">Detection confidence</Term>
-              </span>
+              <span className="label">Detection confidence</span>
               <span className="readout text-[13px]">{d.confidence.toFixed(1)}%</span>
             </div>
+            {/* Certainty, not severity: neutral fill; tick marks the current threshold */}
             <div className="meter" aria-hidden="true">
-              <span style={{ width: `${d.confidence}%`, background: d.status.color }} />
+              <span className="bg-ink-2" style={{ width: `${d.confidence}%` }} />
+              <i className="absolute inset-y-[-2px] w-px bg-accent" style={{ left: `${threshold}%` }} />
             </div>
+            <div className="mt-1 text-right font-mono text-[10px] text-ink-3">threshold {threshold}%</div>
           </div>
 
           <dl className="divide-y divide-line/60">
@@ -44,7 +45,7 @@ export default function ObjectDetail({ d, detectedAt }) {
             </Field>
             <Field label="Latitude">{fmtLat(d.lat)}</Field>
             <Field label="Longitude">{fmtLon(d.lon)}</Field>
-            <Field label={<Term term="bounding box">Bounding box</Term>}>
+            <Field label="Bounding box">
               {d.bbox.w}×{d.bbox.h} px @ {d.bbox.x},{d.bbox.y}
             </Field>
             <Field label="Detected">{detectedAt}</Field>

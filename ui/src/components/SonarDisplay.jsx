@@ -57,22 +57,26 @@ function Axes({ geo, w, h, part }) {
 
   return (
     <>
-        {/* Range axis (slant range, metres per channel) */}
-        <div className="pointer-events-none absolute left-0 right-0" style={{ top: -AXIS_TOP, height: AXIS_TOP }} aria-hidden="true">
-          {rTicks.map((r) => (
-            <span key={r} className="absolute -translate-x-1/2 font-mono text-[10px] text-ink-3" style={{ left: xOf(r), top: 2 }}>
-              {Math.abs(r).toFixed(0)}
-            </span>
-          ))}
-        </div>
-        {/* Along-track axis (metres from scan start) */}
-        <div className="pointer-events-none absolute top-0 bottom-0" style={{ left: -AXIS_LEFT, width: AXIS_LEFT - 6 }} aria-hidden="true">
-          {aTicks.map((a) => (
-            <span key={a} className="absolute right-0 -translate-y-1/2 font-mono text-[10px] text-ink-3" style={{ top: yOf(a) }}>
-              {a.toFixed(0)}
-            </span>
-          ))}
-        </div>
+      {/* Axis units: both axes in metres */}
+      <span className="pointer-events-none absolute font-mono text-[10px] text-ink-3" style={{ left: -AXIS_LEFT + 4, top: -AXIS_TOP + 2 }} aria-hidden="true">
+        m
+      </span>
+      {/* Range axis (slant range, metres per channel) */}
+      <div className="pointer-events-none absolute left-0 right-0" style={{ top: -AXIS_TOP, height: AXIS_TOP }} aria-hidden="true">
+        {rTicks.map((r) => (
+          <span key={r} className="absolute -translate-x-1/2 font-mono text-[10px] text-ink-3" style={{ left: xOf(r), top: 2 }}>
+            {Math.abs(r).toFixed(0)}
+          </span>
+        ))}
+      </div>
+      {/* Along-track axis (metres from scan start) */}
+      <div className="pointer-events-none absolute top-0 bottom-0" style={{ left: -AXIS_LEFT, width: AXIS_LEFT - 6 }} aria-hidden="true">
+        {aTicks.map((a) => (
+          <span key={a} className="absolute right-0 -translate-y-1/2 font-mono text-[10px] text-ink-3" style={{ top: yOf(a) }}>
+            {a.toFixed(0)}
+          </span>
+        ))}
+      </div>
     </>
   );
 }
@@ -119,7 +123,7 @@ function EmptyDisplay({ onImport, onLoadDemo, onFiles }) {
       />
       <div aria-hidden="true" className="absolute inset-y-0 left-1/2 border-l border-dashed border-ink/15" />
       <div className="relative max-w-sm px-6 text-center">
-        <p className="label mb-2">No scan loaded</p>
+        <p className="caps mb-2">No scan loaded</p>
         <p className="mb-5 text-[15px] leading-relaxed text-ink">
           Import side-scan sonar data to begin hazard analysis, or open the demo survey.
         </p>
@@ -190,21 +194,22 @@ export default function SonarDisplay({
     <section className="pane h-full" aria-labelledby="sonar-h">
       <div className="pane-head">
         <h1 id="sonar-h" ref={headingRef} tabIndex={-1} className="pane-title focus:outline-none">
-          <Term term="sonar waterfall">Sonar display</Term>
+          Sonar display
         </h1>
         {geo && (
           <>
-          <span className="hidden font-mono text-2xs text-ink-3 md:inline" aria-label="Port on the left, starboard on the right">
-            PORT <span className="text-ink-2">◂ ▸</span> STBD
-          </span>
-          <dl className="hidden items-center gap-4 font-mono text-2xs text-ink-3 md:flex">
-            <div className="flex gap-1.5"><dt><Term term="swath width">SWATH</Term></dt><dd className="text-ink-2">{geo.swathM} m</dd></div>
-            <div className="flex gap-1.5"><dt><Term term="ping">PINGS</Term></dt><dd className="text-ink-2">{geo.heightPx}</dd></div>
-            <div className="hidden gap-1.5 lg:flex"><dt>Δ PING</dt><dd className="text-ink-2">{geo.pingSpacingM.toFixed(2)} m</dd></div>
-          </dl>
+            <span className="hidden font-mono text-2xs text-ink-3 md:inline" aria-label="Port on the left, starboard on the right">
+              PORT <span className="text-ink-2">◂ ▸</span> STBD
+            </span>
+            <dl className="hidden items-center gap-4 font-mono text-2xs text-ink-3 md:flex">
+              <div className="flex gap-1.5"><dt><Term term="swath width">SWATH</Term></dt><dd className="text-ink-2">{geo.swathM} m</dd></div>
+              <div className="flex gap-1.5"><dt><Term term="ping">PINGS</Term></dt><dd className="text-ink-2">{geo.heightPx}</dd></div>
+              <div className="hidden gap-1.5 lg:flex"><dt>Δ PING</dt><dd className="text-ink-2">{geo.pingSpacingM.toFixed(2)} m</dd></div>
+            </dl>
           </>
         )}
-        <div className="ml-auto flex gap-1">
+        {/* Display controls only once there is something to display */}
+        <div className={`ml-auto flex gap-1 ${src ? "" : "invisible"}`}>
           <button type="button" className="btn btn-ghost h-7 px-2 text-xs" aria-pressed={showGrid} onClick={() => setShowGrid((v) => !v)}>
             <Grid3x3 size={14} aria-hidden="true" />
             Grid
@@ -282,7 +287,7 @@ export default function SonarDisplay({
                     >
                       {(showLabels || active) && (
                         <span className="marker-tag" aria-hidden="true">
-                          {d.id} {d.label.toUpperCase()}
+                          {d.id}
                         </span>
                       )}
                       {/* Hover/focus only: the selection itself is shown in the Object detail panel */}
@@ -298,7 +303,7 @@ export default function SonarDisplay({
 
       {/* Footer: legend, colour scale, cursor readout */}
       <div className="flex min-h-9 flex-wrap items-center gap-x-5 gap-y-1 border-t border-line px-3 py-1.5 font-mono text-2xs text-ink-3">
-        <span className="flex items-center gap-3" aria-label="Legend">
+        <span className={`flex items-center gap-3 ${src ? "" : "invisible"}`} aria-label="Legend">
           {[STATUS.critical, STATUS.warning, STATUS.review].map((s) => (
             <span key={s.key} className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 border-[1.5px]" style={{ borderColor: s.color }} aria-hidden="true" />

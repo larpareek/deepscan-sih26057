@@ -6,14 +6,14 @@ import { StatusTag, Term } from "./ui";
 const COLUMNS = [
   { key: "id", label: "ID", sort: (d) => d.id },
   { key: "type", label: "Type", sort: (d) => d.label },
-  { key: "range", label: "Range", num: true, sort: (d) => Math.abs(d.rangeM) },
-  { key: "along", label: "Along-trk", num: true, sort: (d) => d.alongM },
-  { key: "size", label: "Size L×W", num: true, sort: (d) => d.dims.length },
-  { key: "conf", label: "Confidence", num: true, sort: (d) => d.confidence },
+  { key: "range", label: "Range", unit: "m", num: true, sort: (d) => Math.abs(d.rangeM) },
+  { key: "along", label: "Along-track", unit: "m", num: true, sort: (d) => d.alongM },
+  { key: "size", label: "Size L×W", unit: "m", num: true, sort: (d) => d.dims.length },
+  { key: "conf", label: "Conf.", unit: "%", num: true, sort: (d) => d.confidence },
   { key: "status", label: "Status", sort: (d) => d.status.rank },
 ];
 
-export default function DetectionsTable({ detections, hiddenCount, activeId, selectedId, onHover, onSelect }) {
+export default function DetectionsTable({ detections, hiddenCount, activeId, selectedId, onHover, onSelect, hasScan, busy }) {
   const [sort, setSort] = useState({ key: "status", dir: -1 });
   const rows = useMemo(() => {
     const col = COLUMNS.find((c) => c.key === sort.key);
@@ -38,7 +38,13 @@ export default function DetectionsTable({ detections, hiddenCount, activeId, sel
 
       {detections.length === 0 ? (
         <p className="px-3 py-4 text-[13px] text-ink-3">
-          No detections match the current <Term term="confidence threshold">threshold</Term> and filters.
+          {busy
+            ? "Processing scan…"
+            : !hasScan
+              ? "No scan loaded."
+              : hiddenCount > 0
+                ? <>No detections match the current <Term term="confidence threshold">threshold</Term> and filters.</>
+                : "No objects detected in this scan."}
         </p>
       ) : (
         <div className="min-h-0 flex-1 overflow-auto">
@@ -48,7 +54,11 @@ export default function DetectionsTable({ detections, hiddenCount, activeId, sel
                 {COLUMNS.map((c) => (
                   <th key={c.key} scope="col" className={c.num ? "text-right" : ""} aria-sort={sort.key === c.key ? (sort.dir > 0 ? "ascending" : "descending") : "none"}>
                     <button type="button" onClick={() => toggleSort(c.key)} className={`hit inline-flex items-center gap-1 uppercase hover:text-ink-2 ${c.num ? "flex-row-reverse" : ""}`}>
-                      {c.label}
+                      <span>
+                        {c.label}
+                        {/* Units keep their case ("m", not "M") inside the uppercase header */}
+                        {c.unit && <span className="normal-case tracking-normal"> ({c.unit})</span>}
+                      </span>
                       {sort.key === c.key && (sort.dir > 0 ? <ArrowUp size={11} aria-hidden="true" /> : <ArrowDown size={11} aria-hidden="true" />)}
                     </button>
                   </th>
@@ -85,13 +95,13 @@ export default function DetectionsTable({ detections, hiddenCount, activeId, sel
                     </td>
                     <td className="text-ink">{d.label}</td>
                     <td className="num text-ink-2">
-                      {Math.abs(d.rangeM).toFixed(1)} m <span className="text-ink-3">{d.rangeM >= 0 ? "S" : "P"}</span>
+                      {Math.abs(d.rangeM).toFixed(1)} <span className="inline-block w-3 text-left text-ink-3">{d.rangeM >= 0 ? "S" : "P"}</span>
                     </td>
-                    <td className="num text-ink-2">{d.alongM.toFixed(1)} m</td>
+                    <td className="num text-ink-2">{d.alongM.toFixed(1)}</td>
                     <td className="num text-ink-2">
                       {d.dims.length.toFixed(1)}×{d.dims.width.toFixed(1)}
                     </td>
-                    <td className="num text-ink">{d.confidence.toFixed(1)}%</td>
+                    <td className="num text-ink">{d.confidence.toFixed(1)}</td>
                     <td>
                       <StatusTag status={d.status} />
                     </td>

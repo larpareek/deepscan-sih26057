@@ -64,6 +64,14 @@
 
   /* ---- Type roles ---- */
   .label {
+    @apply text-xs text-ink-3;
+  }
+  /* Group heading inside a console section (between section title and field labels) */
+  .subhead {
+    @apply text-xs font-medium text-ink-2;
+  }
+  /* Small caps for titles and column headers only */
+  .caps {
     @apply text-2xs font-medium uppercase tracking-[0.08em] text-ink-3;
   }
   .readout {
@@ -89,7 +97,7 @@
   }
   .btn[aria-pressed="true"],
   .btn[aria-expanded="true"] {
-    @apply border-accent/60 bg-accent/10 text-ink;
+    @apply border-line-strong bg-surface-3 text-ink;
   }
 
   /* Segmented control */
@@ -108,7 +116,7 @@
     @apply inline-block h-2 w-2 shrink-0 rounded-full;
   }
   .tag {
-    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-sm border px-1.5 py-px font-mono text-2xs font-medium uppercase tracking-wide;
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap font-mono text-2xs font-medium uppercase tracking-wide;
   }
 
   /* ---- Tables ---- */
@@ -256,8 +264,8 @@
   @apply h-3.5 w-3.5 cursor-pointer appearance-none rounded-sm border border-line-strong bg-bg-1;
 }
 .check:checked {
-  background: #38b6c9 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='%23071018' stroke-width='2.2'/%3E%3C/svg%3E") center/100% no-repeat;
-  border-color: #38b6c9;
+  background: #a8bbc5 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='%23071018' stroke-width='2.2'/%3E%3C/svg%3E") center/100% no-repeat;
+  border-color: #a8bbc5;
 }
 
 /* ---- Leaflet (survey map) ---- */
@@ -380,4 +388,15 @@
     position: absolute;
     inset: -10px;
   }
+}
+
+/* Glossary terms: no permanent underline (visual noise); hint on hover/focus only */
+.term {
+  text-decoration: none;
+  cursor: help;
+}
+.term:hover,
+.term:focus-visible {
+  text-decoration: underline dotted #8da2ad;
+  text-underline-offset: 3px;
 }

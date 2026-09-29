@@ -44,7 +44,7 @@ export function Term({ term, children, className = "" }) {
             e.preventDefault(); // keep Radix from closing it, so a tap opens it
             setOpen(true);
           }}
-          className={`term -my-1 inline-block cursor-help rounded-sm py-1 text-left [text-transform:inherit] underline decoration-line-strong decoration-dotted underline-offset-[3px] hover:decoration-ink-2 ${className}`}
+          className={`term -my-1 inline-block rounded-sm py-1 text-left [text-transform:inherit] ${className}`}
         >
           {children ?? term}
         </button>
@@ -62,8 +62,8 @@ export function Term({ term, children, className = "" }) {
 /** Status tag: text + colour, e.g. [● CRITICAL]. */
 export function StatusTag({ status, className = "" }) {
   return (
-    <span className={`tag ${status.text} ${className}`} style={{ borderColor: `${status.color}66` }}>
-      <span className="dot h-1.5 w-1.5" style={{ background: status.color }} aria-hidden="true" />
+    <span className={`tag ${status.text} ${className}`}>
+      <span className="h-1.5 w-1.5 shrink-0" style={{ background: status.color }} aria-hidden="true" />
       {status.label}
     </span>
   );

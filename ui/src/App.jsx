@@ -431,12 +431,14 @@ export default function App() {
                 selectedId={selectedId}
                 onHover={setHoverId}
                 onSelect={select}
+                hasScan={Boolean(scan)}
+                busy={busy}
               />
             </div>
           </div>
 
           <div className="flex flex-col border-line bg-surface lg:col-start-2 xl:col-start-auto xl:min-h-0 xl:border-l">
-            <ObjectDetail d={selected} detectedAt={detectedAt} />
+            <ObjectDetail d={selected} detectedAt={detectedAt} threshold={threshold} />
             <div className="flex min-h-[320px] flex-1 flex-col border-t border-line">
               <SpatialPanel
                 plannedTrack={isDemo ? DEMO_TRACK : []}
@@ -447,6 +449,8 @@ export default function App() {
                 selected={selected}
                 onHover={setHoverId}
                 onSelect={select}
+                hasScan={Boolean(scan)}
+                busy={busy}
               />
             </div>
           </div>
