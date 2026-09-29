@@ -21,7 +21,7 @@ Follow **Installation & Setup** in the [README](README.md). The backend (`src/`)
 
 - **Never commit** model weights (`*.pt`, `*.onnx`), datasets, uploads (`data/`) or secrets (`.env`). The `.gitignore` covers these.
 - **Model changes:** include before/after metrics (mAP@50, precision, recall, latency) and the dataset split you used.
-- **UI changes:** keep WCAG AA. Text contrast must be ≥ 4.5:1, touch targets ≥ 44 px, and everything must work with a keyboard. Don't convey meaning by colour alone. Respect `prefers-reduced-motion`.
+- **UI changes:** keep WCAG AA. Text contrast must be ≥ 4.5:1, targets ≥ 24 px on desktop and ≥ 44 px on touch screens, and everything must work with a keyboard. Don't convey meaning by colour alone. Respect `prefers-reduced-motion`.
 - **API changes:** update the contract in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 - Start new source files with the project header line (see any existing file).
 

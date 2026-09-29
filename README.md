@@ -1,5 +1,8 @@
 # SEASCAN: AI-Powered Automated Underwater Marine Debris and Anomaly Detection System
 
+[![CI](https://github.com/larpareek/deepscan-sih26057/actions/workflows/ci.yml/badge.svg)](https://github.com/larpareek/deepscan-sih26057/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 > **SIH Problem Statement ID: `SIH26057`**
 >
 > **Ministry:** Ministry of Earth Sciences (MoES) / National Institute of Ocean Technology (NIOT)
@@ -20,6 +23,8 @@
 | **Backend API (Railway)** | <https://deepscan-api-production.up.railway.app> · interactive docs: [`/docs`](https://deepscan-api-production.up.railway.app/docs) |
 
 Click **Load demo survey** for an instant walkthrough (runs in the browser), or import a sonar image and its ping metadata to run the full pipeline on the live backend.
+
+![SEASCAN operator console: sonar display with status-coded detections, detections table, object detail and survey map](docs/images/seascan-console.jpg)
 
 ---
 
@@ -55,7 +60,7 @@ flowchart LR
     B --> C["Inference<br/>YOLOv8n"]
     C --> D["Noise filter<br/>acoustic-shadow penalty + confidence threshold"]
     D --> E["Geotagging<br/>pixel to lat/lon, size in metres"]
-    E --> F["UI dashboard<br/>canvas, hazards, map"]
+    E --> F["Operator console<br/>sonar display, detections, survey map"]
     E --> G["Report<br/>JSON / CSV"]
 ```
 
@@ -71,10 +76,11 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the component breakdown, 
 │   ├── geotagging.py    # GeotaggingEngine, JSON/CSV reports
 │   └── api.py           # FastAPI: /upload, /detect, /report/{job_id}
 ├── scripts/export_onnx.py
-├── ui/                  # React + Vite + Tailwind dashboard
+├── tests/               # pytest: preprocessing + geotagging
+├── ui/                  # React + Vite + Tailwind operator console
 ├── models/              # weights (git-ignored; yolov8n.pt auto-downloads)
 ├── data/{raw,processed} # uploads and reports (git-ignored)
-└── docs/                # architecture and demo script
+└── docs/                # architecture, demo script, screenshots
 ```
 
 ## Installation & Setup
@@ -101,6 +107,15 @@ npm run dev                          # http://localhost:5173
 ```
 
 In development, `/api/*` is proxied to `http://localhost:8000` (see `ui/vite.config.js`). Without the backend, the dashboard still works using the built-in **demo scan**.
+
+### Tests
+
+```bash
+pip install pytest
+pytest -q          # 20 tests: preprocessing (dropouts, speckle, CLAHE) and geotagging (pixel -> lat/lon, reports)
+```
+
+CI runs Ruff, these tests and the frontend build on every push.
 
 ### Useful commands
 
@@ -181,7 +196,12 @@ Every variable is documented in [`.env.example`](.env.example):
 
 <!-- FILL BEFORE SUBMISSION: replace TBD with evaluation results -->
 
-**Measured pipeline latency** (prototype, CPU, 1080×810 image, stock weights, warm server): preprocessing ≈ 22 ms, inference ≈ 17–23 ms, geotagging and report ≈ 9 ms.
+**Measured pipeline latency** (1080×810 image, stock weights, warm server):
+
+| Environment | Preprocessing | Inference + shadow filter | Geotag + report |
+|---|---|---|---|
+| Laptop CPU (local) | ≈ 22 ms | ≈ 17–23 ms | ≈ 9 ms |
+| Railway CPU (live deployment) | ≈ 33–70 ms | ≈ 25–250 ms | ≈ 15–80 ms |
 
 ## Datasets Used
 
@@ -193,6 +213,14 @@ Candidate sources for training and evaluation. **Status: planned (not yet used t
 | USGS Coastal & Marine Hazards and Resources Program | Sonar and seabed-mapping datasets | <https://www.usgs.gov/programs/cmhrp> (verify) |
 | AquaScan-1K | Underwater sonar imagery | TBD <!-- FILL BEFORE SUBMISSION --> |
 | AI4Shipwrecks | Labelled side-scan sonar shipwreck imagery | TBD <!-- FILL BEFORE SUBMISSION --> |
+
+## Roadmap
+
+- **Fine-tune on side-scan sonar data** (AI4Shipwrecks, NOAA/USGS surveys) for the four target classes, and fill in the Model Performance table.
+- **Motion compensation:** use roll, pitch and heading from the ping headers in geotagging; today the across-track model is linear with slant-range correction.
+- **Native survey formats:** read XTF/JSF sonar files and export georeferenced GeoTIFF mosaics (the `rasterio` dependency is in place for this).
+- **Persistent job store** (database + object storage) instead of in-memory jobs, and live telemetry streaming from the vehicle.
+- **On-vehicle inference** with the ONNX export on an embedded GPU (e.g. Jetson).
 
 ## License
 

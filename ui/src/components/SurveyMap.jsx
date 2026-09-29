@@ -1,6 +1,6 @@
 // SEASCAN: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
 import L from "leaflet";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import { MapContainer, Marker, Polyline, Popup, ScaleControl, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import { fmtLat, fmtLon } from "../lib/geo";
 
@@ -24,19 +24,16 @@ function objectIcon(d, active) {
   return iconCache.get(key);
 }
 
-// Leaflet caches its container size: re-measure on layout changes. Frame the selected
-// object if there is one, otherwise the whole track; fly to a new selection.
+// Leaflet caches its container size: re-measure on layout changes and frame the scan
+// (imaged leg + detections). Selecting an object keeps that overview; the map only pans
+// when the selection is outside the view, so neighbouring contacts stay in context.
 function Viewport({ track, target }) {
   const map = useMap();
-  const targetRef = useRef(target);
-  targetRef.current = target;
 
   useEffect(() => {
     const frame = () => {
       map.invalidateSize();
-      const t = targetRef.current;
-      if (t) map.setView([t.lat, t.lon], Math.max(map.getZoom(), 18), { animate: false });
-      else if (track.length > 1) map.fitBounds(track, { padding: [28, 28], maxZoom: 19 });
+      if (track.length > 1) map.fitBounds(track, { padding: [28, 28], maxZoom: 19 });
     };
     frame();
     const ro = new ResizeObserver(frame);
@@ -45,7 +42,9 @@ function Viewport({ track, target }) {
   }, [map, track]);
 
   useEffect(() => {
-    if (target) map.flyTo([target.lat, target.lon], Math.max(map.getZoom(), 18), { duration: 0.6 });
+    if (!target) return;
+    const ll = [target.lat, target.lon];
+    if (!map.getBounds().pad(-0.1).contains(ll)) map.panTo(ll, { duration: 0.4 });
   }, [map, target]);
   return null;
 }

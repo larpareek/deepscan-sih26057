@@ -332,7 +332,7 @@ export default function App() {
   const onDownload = (format) => {
     if (isDemo) {
       const r = buildDemoReport(detections);
-      downloadBlob(r[format], `sss_report_demo.${format}`, format === "json" ? "application/json" : "text/csv");
+      downloadBlob(r[format], `seascan_report_demo.${format}`, format === "json" ? "application/json" : "text/csv");
     } else if (live.jobId) {
       window.location.href = reportUrl(live.jobId, format);
     }

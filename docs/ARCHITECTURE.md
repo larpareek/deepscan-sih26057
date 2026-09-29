@@ -13,7 +13,7 @@ flowchart LR
     B --> C["Inference<br/>YOLOv8n"]
     C --> D["Noise filter<br/>acoustic-shadow penalty + confidence threshold"]
     D --> E["Geotagging<br/>pixel to lat/lon, size in metres"]
-    E --> F["UI dashboard"]
+    E --> F["Operator console<br/>sonar display, detections, survey map"]
     E --> G["Report<br/>JSON / CSV"]
 ```
 

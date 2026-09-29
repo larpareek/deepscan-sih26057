@@ -35,6 +35,7 @@ from typing import Literal
 import cv2
 import numpy as np
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import Path as PathParam
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -188,8 +189,10 @@ async def upload(
     meta.setdefault("image_width_px", w)
     try:
         parsed = SonarMetadata.from_dict(meta)
-    except (KeyError, TypeError, ValueError) as e:
-        raise HTTPException(422, f"invalid metadata: {e!r}") from e
+    except KeyError as e:
+        raise HTTPException(422, f"invalid metadata: missing required field '{e.args[0]}'") from e
+    except (TypeError, ValueError) as e:
+        raise HTTPException(422, f"invalid metadata: {e}") from e
     if parsed.num_pings != h:
         raise HTTPException(422, f"metadata has {parsed.num_pings} ping_coords but image has {h} rows")
 
@@ -210,12 +213,19 @@ async def detect(req: DetectRequest):
     return await run_in_threadpool(_run_pipeline, job, req)
 
 
+# Job IDs are uuid4 hex; enforcing the format keeps arbitrary strings out of filesystem paths.
+JOB_ID_PATTERN = r"^[0-9a-f]{32}$"
+
+
 @app.get("/report/{job_id}")
-async def report(job_id: str, format: Literal["json", "csv"] = Query("json")):
+async def report(
+    job_id: str = PathParam(pattern=JOB_ID_PATTERN),
+    format: Literal["json", "csv"] = Query("json"),
+):
     path = PROCESSED_DIR / job_id / f"report.{format}"
     if not path.is_file():
         job = state.jobs.get(job_id)
         detail = "report not generated yet; call POST /detect first" if job else f"unknown job_id {job_id}"
         raise HTTPException(404, detail)
     media = "application/json" if format == "json" else "text/csv"
-    return FileResponse(path, media_type=media, filename=f"sss_report_{job_id}.{format}")
+    return FileResponse(path, media_type=media, filename=f"seascan_report_{job_id}.{format}")

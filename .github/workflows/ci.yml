@@ -1,4 +1,4 @@
-# SEASCAN (SIH26057) CI: lint the Python backend and build the React frontend.
+# SEASCAN (SIH26057) CI: lint and test the Python backend, build the React frontend.
 name: CI
 
 on:
@@ -17,6 +17,18 @@ jobs:
           python-version: "3.12"
       - run: pip install ruff==0.16.9
       - run: ruff check .
+
+  test-python:
+    name: Tests (preprocessing + geotagging)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      # Core algorithms only need NumPy + OpenCV; no PyTorch download in CI
+      - run: pip install numpy==2.5.3 opencv-python-headless==5.0.0.93 pytest==9.1.1
+      - run: pytest -q
 
   build-frontend:
     name: Build (frontend)

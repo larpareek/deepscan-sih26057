@@ -10,3 +10,7 @@ select = ["E", "F", "W", "I", "B", "UP"]
 [tool.ruff.lint.flake8-bugbear]
 # FastAPI declares request parameters via default-argument calls; that's the framework idiom.
 extend-immutable-calls = ["fastapi.File", "fastapi.Query", "fastapi.Form", "fastapi.Depends"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
