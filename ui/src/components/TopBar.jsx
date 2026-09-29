@@ -14,10 +14,10 @@ function UtcClock() {
 }
 
 function systemState(mode, online, busy, pending) {
-  if (busy) return ["#38B6C9", "PROCESSING"];
-  if (pending) return ["#8DA2AD", "CONNECTING"];
-  if (online) return ["#4BAF7A", "SYSTEM ONLINE"];
-  return ["#E4A83A", mode === "demo" ? "OFFLINE · DEMO DATA" : "API OFFLINE"];
+  if (busy) return ["#78A9FF", "PROCESSING"];
+  if (pending) return ["#979DA5", "CONNECTING"];
+  if (online) return ["#42BE65", "SYSTEM ONLINE"];
+  return ["#F1C21B", mode === "demo" ? "OFFLINE · DEMO DATA" : "API OFFLINE"];
 }
 
 function SettingsMenu({ soundOn, onToggleSound }) {

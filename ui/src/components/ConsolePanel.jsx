@@ -200,7 +200,7 @@ function DetectionSection({ threshold, onThreshold, method, onMethod, classCount
 /* ---------------------------------------------------------------- SYSTEM */
 
 function StatusRow({ label, state, detail }) {
-  const color = { ok: "#4BAF7A", warn: "#E4A83A", off: "#8DA2AD", busy: "#38B6C9" }[state];
+  const color = { ok: "#42BE65", warn: "#F1C21B", off: "#979DA5", busy: "#78A9FF" }[state];
   return (
     <div className="flex items-center gap-2 py-[3px] text-[13px]">
       <span className="dot" style={{ background: color }} aria-hidden="true" />
@@ -279,7 +279,7 @@ function SystemSection({ backend, mode, phase, timings, log }) {
 
       <h3 className="subhead mb-1.5">Processing</h3>
       <div className="mb-1.5 meter" aria-hidden="true">
-        {phase ? <span className="w-2/5 animate-indeterminate bg-accent" /> : <span style={{ width: timings ? "100%" : "0%", background: "#4BAF7A" }} />}
+        {phase ? <span className="w-2/5 animate-indeterminate bg-accent" /> : <span style={{ width: timings ? "100%" : "0%", background: "#42BE65" }} />}
       </div>
       <div className="mb-3">
         <Pipeline phase={phase} timings={timings} mode={mode} />

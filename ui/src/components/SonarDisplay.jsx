@@ -3,6 +3,7 @@ import { FileUp, Grid3x3, Tag } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { STATUS } from "../lib/hazard";
 import { fmtLat, fmtLon } from "../lib/geo";
+import { paletteGradient } from "../lib/sonarSynth";
 import { playPing } from "../lib/sound";
 import { Term } from "./ui";
 
@@ -46,10 +47,10 @@ function Axes({ geo, w, h, part }) {
     return (
       <svg className="pointer-events-none absolute inset-0 z-[1] overflow-visible" width={w} height={h} aria-hidden="true">
         {rTicks.map((r) => (
-          <line key={`r${r}`} x1={xOf(r)} x2={xOf(r)} y1={0} y2={h} stroke="#E6EEF2" strokeOpacity={r === 0 ? 0.28 : 0.09} strokeDasharray={r === 0 ? "4 4" : undefined} />
+          <line key={`r${r}`} x1={xOf(r)} x2={xOf(r)} y1={0} y2={h} stroke="#F2F4F8" strokeOpacity={r === 0 ? 0.28 : 0.09} strokeDasharray={r === 0 ? "4 4" : undefined} />
         ))}
         {aTicks.map((a) => (
-          <line key={`a${a}`} x1={0} x2={w} y1={yOf(a)} y2={yOf(a)} stroke="#E6EEF2" strokeOpacity={0.07} />
+          <line key={`a${a}`} x1={0} x2={w} y1={yOf(a)} y2={yOf(a)} stroke="#F2F4F8" strokeOpacity={0.07} />
         ))}
       </svg>
     );
@@ -119,7 +120,7 @@ function EmptyDisplay({ onImport, onLoadDemo, onFiles }) {
       {/* Faint waterfall grid behind the message */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 opacity-60 [background-image:linear-gradient(rgba(230,238,242,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(230,238,242,0.05)_1px,transparent_1px)] [background-size:48px_48px]"
+        className="absolute inset-0 opacity-60 [background-image:linear-gradient(rgba(242,244,248,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(242,244,248,0.05)_1px,transparent_1px)] [background-size:48px_48px]"
       />
       <div aria-hidden="true" className="absolute inset-y-0 left-1/2 border-l border-dashed border-ink/15" />
       <div className="relative max-w-sm px-6 text-center">
@@ -146,7 +147,7 @@ function EmptyDisplay({ onImport, onLoadDemo, onFiles }) {
 
 export default function SonarDisplay({
   src, sceneKey, geo, detections, activeId, onHover, onSelect, busy, busyStage, soundOn,
-  onImport, onLoadDemo, onFiles, showColorbar,
+  onImport, onLoadDemo, onFiles, showColorbar, palette, onPalette,
 }) {
   const areaRef = useRef(null);
   const area = useSize(areaRef);
@@ -209,7 +210,16 @@ export default function SonarDisplay({
           </>
         )}
         {/* Display controls only once there is something to display */}
-        <div className={`ml-auto flex gap-1 ${src ? "" : "invisible"}`}>
+        <div className={`ml-auto flex items-center gap-1 ${src ? "" : "invisible"}`}>
+          {showColorbar && (
+            <div className="seg mr-2" role="group" aria-label="Display palette">
+              {[["gray", "Gray"], ["bronze", "Bronze"]].map(([key, label]) => (
+                <button key={key} type="button" aria-pressed={palette === key} onClick={() => onPalette(key)} className="!h-6">
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
           <button type="button" className="btn btn-ghost h-7 px-2 text-xs" aria-pressed={showGrid} onClick={() => setShowGrid((v) => !v)}>
             <Grid3x3 size={14} aria-hidden="true" />
             Grid
@@ -314,7 +324,7 @@ export default function SonarDisplay({
         {showColorbar && (
           <span className="hidden items-center gap-1.5 md:flex">
             LOW
-            <span aria-hidden="true" className="h-2 w-20 border border-line bg-gradient-to-r from-[#050c14] via-[#2d5566] to-[#dfe8ec]" />
+            <span aria-hidden="true" className="h-2 w-20 border border-line" style={{ background: paletteGradient(palette) }} />
             HIGH <span className="text-ink-3">RETURN</span>
           </span>
         )}

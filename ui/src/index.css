@@ -28,16 +28,16 @@
   }
 
   ::selection {
-    background: rgba(56, 182, 201, 0.3);
+    background: rgba(120, 169, 255, 0.3);
   }
 
   * {
     scrollbar-width: thin;
-    scrollbar-color: #304652 transparent;
+    scrollbar-color: #3d444a transparent;
   }
 
   :focus-visible {
-    outline: 2px solid #38b6c9;
+    outline: 2px solid #78a9ff;
     outline-offset: 2px;
   }
 }
@@ -108,7 +108,7 @@
     @apply h-7 flex-1 rounded px-2.5 font-mono text-2xs font-medium uppercase tracking-wider text-ink-2 transition-colors duration-150 hover:text-ink;
   }
   .seg > button[aria-pressed="true"] {
-    @apply bg-surface-3 text-ink shadow-[inset_0_0_0_1px_#304652];
+    @apply bg-surface-3 text-ink shadow-[inset_0_0_0_1px_#3d444a];
   }
 
   /* ---- Status ---- */
@@ -133,7 +133,7 @@
     @apply cursor-pointer transition-colors duration-100 hover:bg-surface-2;
   }
   .data-table tbody tr[aria-selected="true"] {
-    @apply bg-accent/[0.08] shadow-[inset_2px_0_0_#38b6c9];
+    @apply bg-accent/[0.08] shadow-[inset_2px_0_0_#78a9ff];
   }
   .num {
     @apply text-right font-mono tabular-nums;
@@ -153,7 +153,7 @@
     border-style: dashed;
   }
   .marker:focus-visible {
-    outline: 2px solid #e6eef2;
+    outline: 2px solid #f2f4f8;
     outline-offset: 3px;
   }
   /* 44px minimum hit area for small objects on touch screens */
@@ -225,15 +225,15 @@
 }
 .range::-webkit-slider-runnable-track {
   height: 2px;
-  background: linear-gradient(90deg, #38b6c9 var(--pct), #304652 var(--pct));
+  background: linear-gradient(90deg, #78a9ff var(--pct), #3d444a var(--pct));
 }
 .range::-moz-range-track {
   height: 2px;
-  background: #304652;
+  background: #3d444a;
 }
 .range::-moz-range-progress {
   height: 2px;
-  background: #38b6c9;
+  background: #78a9ff;
 }
 .range::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -241,17 +241,17 @@
   width: 14px;
   height: 14px;
   border-radius: 2px;
-  background: #e6eef2;
-  border: 2px solid #071018;
-  box-shadow: 0 0 0 1px #38b6c9;
+  background: #f2f4f8;
+  border: 2px solid #121619;
+  box-shadow: 0 0 0 1px #78a9ff;
 }
 .range::-moz-range-thumb {
   width: 10px;
   height: 10px;
   border-radius: 2px;
-  background: #e6eef2;
-  border: 2px solid #071018;
-  box-shadow: 0 0 0 1px #38b6c9;
+  background: #f2f4f8;
+  border: 2px solid #121619;
+  box-shadow: 0 0 0 1px #78a9ff;
 }
 @media (pointer: coarse) {
   .range {
@@ -264,21 +264,21 @@
   @apply h-3.5 w-3.5 cursor-pointer appearance-none rounded-sm border border-line-strong bg-bg-1;
 }
 .check:checked {
-  background: #a8bbc5 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='%23071018' stroke-width='2.2'/%3E%3C/svg%3E") center/100% no-repeat;
-  border-color: #a8bbc5;
+  background: #c1c7cd url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5l3 3 6-7' fill='none' stroke='%23071018' stroke-width='2.2'/%3E%3C/svg%3E") center/100% no-repeat;
+  border-color: #c1c7cd;
 }
 
 /* ---- Leaflet (survey map) ---- */
 .leaflet-container {
-  background: #0a141d;
+  background: #0e1114;
   font-family: "IBM Plex Sans", system-ui, sans-serif;
 }
-/* Light OSM tiles -> muted dark basemap */
+/* Light OSM tiles -> neutral dark basemap (no hue, so status colours stand out) */
 .leaflet-tile-pane {
-  filter: invert(1) hue-rotate(185deg) saturate(0.25) brightness(0.62) contrast(1.05);
+  filter: invert(1) grayscale(1) brightness(0.6) contrast(1.08);
 }
 .leaflet-control-zoom {
-  border: 1px solid #304652 !important;
+  border: 1px solid #3d444a !important;
   border-radius: 4px !important;
   overflow: hidden;
 }
@@ -288,9 +288,9 @@
   height: 28px !important;
   line-height: 28px !important;
   font-size: 16px !important;
-  background: #111e29 !important;
-  color: #e6eef2 !important;
-  border-color: #304652 !important;
+  background: #1b2023 !important;
+  color: #f2f4f8 !important;
+  border-color: #3d444a !important;
 }
 @media (pointer: coarse) {
   .leaflet-control-zoom a,
@@ -301,24 +301,24 @@
   }
 }
 .leaflet-control-scale-line {
-  background: rgba(7, 16, 24, 0.85) !important;
-  border-color: #a8bbc5 !important;
-  color: #e6eef2 !important;
+  background: rgba(18, 22, 25, 0.85) !important;
+  border-color: #c1c7cd !important;
+  color: #f2f4f8 !important;
   font: 500 10px/1.4 "IBM Plex Mono", monospace !important;
 }
 .leaflet-control-attribution {
-  background: rgba(7, 16, 24, 0.85) !important;
-  color: #a8bbc5 !important;
+  background: rgba(18, 22, 25, 0.85) !important;
+  color: #c1c7cd !important;
   font-size: 10px;
 }
 .leaflet-control-attribution a {
-  color: #8fd3de !important;
+  color: #a6c8ff !important;
 }
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {
-  background: #111e29;
-  color: #e6eef2;
-  border: 1px solid #304652;
+  background: #1b2023;
+  color: #f2f4f8;
+  border: 1px solid #3d444a;
   border-radius: 4px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
@@ -328,7 +328,7 @@
   line-height: 1.5;
 }
 .leaflet-container a.leaflet-popup-close-button {
-  color: #a8bbc5;
+  color: #c1c7cd;
 }
 
 /* Survey map markers (Leaflet divIcon) */
@@ -342,7 +342,7 @@
   height: 10px;
   transform: rotate(45deg);
   background: var(--status);
-  border: 1.5px solid #071018;
+  border: 1.5px solid #121619;
   outline: 1px solid var(--status);
   transition: transform 0.15s ease-out;
 }
@@ -354,22 +354,22 @@
   left: 22px;
   top: 3px;
   font: 500 10px/14px "IBM Plex Mono", monospace;
-  color: #e6eef2;
-  background: rgba(7, 16, 24, 0.85);
+  color: #f2f4f8;
+  background: rgba(18, 22, 25, 0.85);
   padding: 0 3px;
   border-radius: 2px;
   white-space: nowrap;
 }
 .map-icon:focus-visible {
-  outline: 2px solid #e6eef2;
+  outline: 2px solid #f2f4f8;
   outline-offset: 2px;
 }
 .auv-marker i {
   position: absolute;
   inset: 6px;
   border-radius: 50%;
-  background: #38b6c9;
-  border: 2px solid #071018;
+  background: #78a9ff;
+  border: 2px solid #121619;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -397,6 +397,6 @@
 }
 .term:hover,
 .term:focus-visible {
-  text-decoration: underline dotted #8da2ad;
+  text-decoration: underline dotted #979da5;
   text-underline-offset: 3px;
 }

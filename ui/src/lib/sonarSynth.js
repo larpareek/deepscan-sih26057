@@ -15,29 +15,46 @@ function mulberry32(seed) {
   };
 }
 
-// Muted steel return scale: near-black water -> slate blue -> off-white (strong returns)
-const STOPS = [
-  [0.0, [5, 12, 20]],
-  [0.3, [27, 51, 64]],
-  [0.55, [45, 85, 102]],
-  [0.8, [138, 169, 181]],
-  [0.93, [200, 215, 221]],
-  [1.0, [223, 232, 236]],
-];
+// Operator-selectable return palettes (dark = weak echo, bright = strong echo)
+const PALETTES = {
+  gray: [
+    [0.0, [8, 8, 8]],
+    [0.3, [52, 52, 52]],
+    [0.55, [110, 110, 110]],
+    [0.8, [190, 190, 190]],
+    [0.93, [228, 228, 228]],
+    [1.0, [245, 245, 245]],
+  ],
+  bronze: [
+    [0.0, [10, 7, 4]],
+    [0.3, [64, 38, 14]],
+    [0.55, [140, 88, 34]],
+    [0.8, [214, 160, 86]],
+    [0.93, [242, 214, 160]],
+    [1.0, [252, 240, 215]],
+  ],
+};
 
-const LUT = (() => {
+function buildLut(stops) {
   const lut = new Uint8ClampedArray(256 * 3);
   for (let i = 0; i < 256; i++) {
     const t = i / 255;
     let k = 0;
-    while (k < STOPS.length - 2 && t > STOPS[k + 1][0]) k++;
-    const [t0, c0] = STOPS[k];
-    const [t1, c1] = STOPS[k + 1];
+    while (k < stops.length - 2 && t > stops[k + 1][0]) k++;
+    const [t0, c0] = stops[k];
+    const [t1, c1] = stops[k + 1];
     const f = (t - t0) / (t1 - t0);
     for (let c = 0; c < 3; c++) lut[i * 3 + c] = c0[c] + (c1[c] - c0[c]) * f;
   }
   return lut;
-})();
+}
+const LUTS = Object.fromEntries(Object.entries(PALETTES).map(([k, v]) => [k, buildLut(v)]));
+
+/** CSS gradient matching a palette, for the colour-scale legend. */
+export function paletteGradient(name) {
+  const stops = PALETTES[name] ?? PALETTES.gray;
+  return `linear-gradient(90deg, ${stops.map(([t, c]) => `rgb(${c.join(",")}) ${Math.round(t * 100)}%`).join(", ")})`;
+}
 
 function shapeIntensity(s, x, y, rand) {
   switch (s.kind) {
@@ -142,7 +159,8 @@ export function buildSonarLayers(width, height, targets, seed = 7) {
 }
 
 /** Render layers to a data URL. strength 0 = raw speckle, 100 = fully despeckled. */
-export function renderSonar({ width, height, clean, speckle }, strength = 50) {
+export function renderSonar({ width, height, clean, speckle }, strength = 50, palette = "gray") {
+  const LUT = LUTS[palette] ?? LUTS.gray;
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;

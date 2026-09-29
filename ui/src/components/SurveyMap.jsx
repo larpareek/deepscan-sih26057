@@ -76,9 +76,9 @@ export default function SurveyMap({ plannedTrack, doneTrack, auvPos, detections,
         <CursorReadout onCursor={onCursor} />
 
         {plannedTrack.length > 1 && (
-          <Polyline positions={plannedTrack} pathOptions={{ color: "#8DA2AD", weight: 1, opacity: 0.6, dashArray: "3 5" }} />
+          <Polyline positions={plannedTrack} pathOptions={{ color: "#979DA5", weight: 1, opacity: 0.6, dashArray: "3 5" }} />
         )}
-        <Polyline positions={doneTrack} pathOptions={{ color: "#38B6C9", weight: 2, opacity: 0.9 }} />
+        <Polyline positions={doneTrack} pathOptions={{ color: "#78A9FF", weight: 2, opacity: 0.9 }} />
 
         {detections.map((d) => (
           // Keyboard-focusable (Leaflet sets role=button + tabindex); Enter opens the popup
@@ -120,7 +120,7 @@ export default function SurveyMap({ plannedTrack, doneTrack, auvPos, detections,
         className="pointer-events-none absolute right-2 top-2 z-[500] grid h-8 w-8 place-items-center rounded border border-line-strong bg-bg/85 font-mono text-[10px] text-ink"
       >
         <svg viewBox="0 0 16 16" className="h-3 w-3" aria-hidden="true">
-          <path d="M8 1 12 14 8 11 4 14Z" fill="#E6EEF2" />
+          <path d="M8 1 12 14 8 11 4 14Z" fill="#F2F4F8" />
         </svg>
         N
       </div>

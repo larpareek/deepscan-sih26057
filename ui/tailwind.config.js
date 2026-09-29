@@ -4,19 +4,19 @@ export default {
   content: ["./index.html", "./src/**/*.{js,jsx}"],
   theme: {
     extend: {
-      // Sonar-workstation palette. Neutral surfaces dominate; accent is reserved for
-      // interaction and the sweep; status colours appear only on status.
+      // Instrument palette built on IBM Carbon's Cool Gray scale (chrome) with a single
+      // interactive accent (Carbon Blue 40) and Carbon's dark-theme support colours for status.
       // Every text colour here is >= 4.5:1 on every surface (WCAG AA).
       colors: {
-        bg: { DEFAULT: "#071018", 1: "#0A141D", 2: "#0E1923" },
-        surface: { DEFAULT: "#111E29", 2: "#15232E", 3: "#192A35" },
-        line: { DEFAULT: "#243744", strong: "#304652" },
-        ink: { DEFAULT: "#E6EEF2", 2: "#A8BBC5", 3: "#8DA2AD" },
-        accent: { DEFAULT: "#38B6C9", hover: "#4CC3D4", dim: "#1B4A55" },
-        warn: { DEFAULT: "#E4A83A" },
-        crit: { DEFAULT: "#D95757", text: "#EE7B7B" },
-        ok: { DEFAULT: "#4BAF7A" },
-        review: { DEFAULT: "#8FA3AE" },
+        bg: { DEFAULT: "#121619", 1: "#0E1114", 2: "#0A0D0F" },
+        surface: { DEFAULT: "#1B2023", 2: "#21272A", 3: "#2A3034" },
+        line: { DEFAULT: "#2c3236", strong: "#3d444a" },
+        ink: { DEFAULT: "#F2F4F8", 2: "#C1C7CD", 3: "#979DA5" },
+        accent: { DEFAULT: "#78A9FF", hover: "#A6C8FF", dim: "#1C2F4D" },
+        warn: { DEFAULT: "#F1C21B" },
+        crit: { DEFAULT: "#FA4D56", text: "#FF8389" },
+        ok: { DEFAULT: "#42BE65" },
+        review: { DEFAULT: "#A2A9B0" },
       },
       fontFamily: {
         sans: ['"IBM Plex Sans"', "system-ui", "sans-serif"],

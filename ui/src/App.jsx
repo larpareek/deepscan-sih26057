@@ -90,6 +90,7 @@ export default function App() {
   const [files, setFiles] = useState({ image: null, metadata: null });
   const [threshold, setThreshold] = useState(50);
   const [method, setMethod] = useState("lee");
+  const [palette, setPalette] = useState("gray"); // demo waterfall display palette
   const [classFilter, setClassFilter] = useState(() => new Set());
   const [includeShadow, setIncludeShadow] = useState(true);
   const [hoverId, setHoverId] = useState(null);
@@ -200,8 +201,8 @@ export default function App() {
   const demoSrc = useMemo(() => {
     if (mode !== "demo") return null;
     layersRef.current ??= buildSonarLayers(IMAGE_W, IMAGE_H, DEMO_TARGETS);
-    return renderSonar(layersRef.current, demoStrength);
-  }, [mode, demoStrength]);
+    return renderSonar(layersRef.current, demoStrength, palette);
+  }, [mode, demoStrength, palette]);
 
   // ---- Scan geometry (axes, range, along-track, cursor coordinates)
   const isDemo = mode === "demo";
@@ -421,6 +422,8 @@ export default function App() {
                 onLoadDemo={onLoadDemo}
                 onFiles={onFiles}
                 showColorbar={isDemo}
+                palette={palette}
+                onPalette={setPalette}
               />
             </div>
             <div className="h-[280px] shrink-0 border-b border-line xl:h-[236px] xl:border-b-0">

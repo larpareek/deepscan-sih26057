@@ -3,10 +3,10 @@
 // status also has a text label (colour is never the only cue).
 
 export const STATUS = {
-  critical: { key: "critical", label: "CRITICAL", color: "#D95757", text: "text-crit-text", rank: 3 },
-  warning: { key: "warning", label: "WARNING", color: "#E4A83A", text: "text-warn", rank: 2 },
-  review: { key: "review", label: "REVIEW", color: "#8FA3AE", text: "text-review", rank: 1 },
-  safe: { key: "safe", label: "SAFE", color: "#4BAF7A", text: "text-ok", rank: 0 },
+  critical: { key: "critical", label: "CRITICAL", color: "#FA4D56", text: "text-crit-text", rank: 3 },
+  warning: { key: "warning", label: "WARNING", color: "#F1C21B", text: "text-warn", rank: 2 },
+  review: { key: "review", label: "REVIEW", color: "#A2A9B0", text: "text-review", rank: 1 },
+  safe: { key: "safe", label: "SAFE", color: "#42BE65", text: "text-ok", rank: 0 },
 };
 
 // Navigation / ecological hazards vs. known infrastructure vs. unclassified returns.
