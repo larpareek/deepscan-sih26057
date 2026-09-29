@@ -10,5 +10,6 @@ models/*.onnx
 **/node_modules
 .venv
 .env
+**/.env
 *.md
 !README.md

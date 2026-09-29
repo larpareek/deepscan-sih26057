@@ -9,6 +9,7 @@ Flow:
     POST /upload            (image + metadata.json)  -> {"job_id": ...}
     POST /detect            {"job_id": ...}          -> detections + geotags
     GET  /report/{job_id}?format=json|csv            -> report file download
+    POST /chat              {user_query, context_data}  -> {"reply": ...} (SEASCAN AI)
 
 Latency notes:
   * The model is loaded and warmed up once at startup, not per request.
@@ -34,13 +35,14 @@ from typing import Literal
 
 import cv2
 import numpy as np
-from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile
 from fastapi import Path as PathParam
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+from src import chat
 from src.geotagging import GeotaggingEngine, SonarMetadata
 from src.inference import DEFAULT_WEIGHTS, MarineDebrisDetector
 from src.preprocessing import preprocess, sonar_input_warning
@@ -73,6 +75,11 @@ class DetectRequest(BaseModel):
     confidence_threshold: float = Field(75.0, ge=0, le=100, description="Minimum confidence, percent")
     despeckle_method: Literal["lee", "nlm", "median"] = "lee"
     include_shadow_penalized: bool = True
+
+
+class ChatRequest(BaseModel):
+    user_query: str = Field(..., min_length=1, max_length=1000)
+    context_data: dict | list | None = Field(None, description="Current scan detections, as shown in the UI")
 
 
 class _State:
@@ -162,7 +169,7 @@ def _run_pipeline(job: Job, req: DetectRequest) -> dict:
 # --------------------------------------------------------------------------- #
 @app.get("/health")
 async def health():
-    return {"status": "ok", "weights": WEIGHTS, "jobs": len(state.jobs)}
+    return {"status": "ok", "weights": WEIGHTS, "jobs": len(state.jobs), "chat": chat.configured()}
 
 
 @app.post("/upload")
@@ -232,3 +239,13 @@ async def report(
         raise HTTPException(404, detail)
     media = "application/json" if format == "json" else "text/csv"
     return FileResponse(path, media_type=media, filename=f"seascan_report_{job_id}.{format}")
+
+
+@app.post("/chat")
+async def chat_endpoint(req: ChatRequest, request: Request):
+    # Behind Railway's proxy the client address is the first X-Forwarded-For entry
+    forwarded = request.headers.get("x-forwarded-for", "")
+    client_id = forwarded.split(",")[0].strip() or (request.client.host if request.client else "unknown")
+    if not chat.allow(client_id):
+        raise HTTPException(429, "too many questions; wait a minute and try again")
+    return await chat.answer(req.user_query.strip(), req.context_data or {})

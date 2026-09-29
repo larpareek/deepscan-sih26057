@@ -16,7 +16,7 @@ function UtcClock() {
 function systemState(mode, online, busy, pending) {
   if (busy) return ["#78A9FF", "PROCESSING"];
   if (pending) return ["#979DA5", "CONNECTING"];
-  if (online) return ["#42BE65", "SYSTEM ONLINE"];
+  if (online) return ["#42BE65", "PIPELINE READY"];
   return ["#F1C21B", mode === "demo" ? "OFFLINE · DEMO DATA" : "API OFFLINE"];
 }
 
@@ -61,13 +61,8 @@ function SettingsMenu({ soundOn, onToggleSound }) {
 export default function TopBar({ scanId, mode, backendOnline, backendPending, busy, lastUpdate, onDownload, reportReady, soundOn, onToggleSound }) {
   const [color, label] = systemState(mode, backendOnline, busy, backendPending);
   return (
-    <header className="flex h-12 shrink-0 items-center gap-4 border-b border-line bg-bg px-3 sm:px-4">
-      <div className="flex items-baseline gap-3">
-        <span className="text-[15px] font-semibold tracking-[0.18em] text-ink">SEASCAN</span>
-        <span className="hidden whitespace-nowrap text-2xs font-medium uppercase tracking-[0.14em] text-ink-3 xl:inline">
-          Sonar hazard detection system
-        </span>
-      </div>
+    <header className="flex h-11 shrink-0 items-center gap-4 border-b border-line bg-bg px-3 sm:px-4">
+      <h1 className="whitespace-nowrap text-2xs font-semibold uppercase tracking-[0.14em] text-ink-2">Operations console</h1>
 
       <dl className="ml-auto hidden items-center divide-x divide-line whitespace-nowrap lg:flex">
         <div className="flex items-baseline gap-2 px-4">

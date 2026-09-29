@@ -41,6 +41,8 @@ Abandoned, lost and discarded fishing gear, known as **ghost nets**, keeps catch
 - **Geotagging engine:** pixel coordinates are converted to latitude/longitude using the AUV's ping positions and heading, with slant-range correction. Each object's size is estimated in metres. Reports export as **JSON and CSV**.
 - **SSS-specific preprocessing:** dropout interpolation, then speckle removal (Lee filter / Non-Local Means / median), then CLAHE contrast enhancement.
 - **Edge-ready via ONNX:** a one-command export to ONNX (opset 12), checked with onnxruntime. The ONNX file loads with the same detector class.
+- **SEASCAN AI (Gemini):** ask questions about the current scan in plain language ("What is the most dangerous hazard here?", "What is the closest ghost net to Chennai?"). The backend grounds every answer in the scan's detections and coordinates; the API key never reaches the browser. If Gemini is unavailable, a deterministic summary answers instead.
+- **Multi-page site:** an editorial landing page, a Technology explainer with an animated towed-sonar diagram, an animated Pipeline walkthrough, a full-page Chat, Analytics (session scans, plus a clearly labelled simulated campaign), and a full-screen Map.
 - **Operator console UI:** a sonar-workstation interface with a calibrated sonar display (range and along-track axes, cursor readout), status-coded detections (CRITICAL / WARNING / REVIEW), a sortable detections table, a survey map, processing-pipeline timings, and WCAG 2.2 AA accessibility.
 
 ## Tech Stack
@@ -48,8 +50,8 @@ Abandoned, lost and discarded fishing gear, known as **ghost nets**, keeps catch
 | Layer | Technologies |
 |---|---|
 | **AI / ML** | Python 3.12, **PyTorch** (CPU build), **YOLOv8** (Ultralytics, `yolov8n`), **OpenCV**, NumPy, **ONNX** + ONNX Runtime (edge export) |
-| **Backend** | **FastAPI**, **Uvicorn**, **Pydantic**, python-multipart |
-| **Frontend** | **React** 18, **Vite**, **Tailwind CSS**, **Leaflet** (react-leaflet), Radix UI (tooltips, popovers), Lucide icons, IBM Plex type |
+| **Backend** | **FastAPI**, **Uvicorn**, **Pydantic**, python-multipart, **Google Gemini** (`google-genai`) for SEASCAN AI |
+| **Frontend** | **React** 18, **Vite**, **Tailwind CSS**, **React Router**, **Framer Motion**, **Recharts**, **Leaflet** (react-leaflet), Radix UI, Lucide icons; Playfair Display + Inter (site), IBM Plex (console) |
 | **Deployment** | **Vercel** (frontend), **Railway** (backend, Docker image), **GitHub Actions** (CI: Ruff lint + frontend build) |
 
 ## Architecture
@@ -80,7 +82,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the component breakdown, 
 │   ├── train_detector.py      # fine-tune YOLOv8n -> models/seascan-yolov8n.pt
 │   └── export_onnx.py
 ├── tests/               # pytest: preprocessing, geotagging, synthetic data
-├── ui/                  # React + Vite + Tailwind operator console
+├── ui/                  # React + Vite site: landing, technology, pipeline, dashboard, chat, analytics, map
 ├── models/              # weights (git-ignored; yolov8n.pt auto-downloads)
 ├── data/{raw,processed} # uploads and reports (git-ignored)
 └── docs/                # architecture, demo script, screenshots
@@ -99,7 +101,9 @@ pip install -r requirements.txt
 uvicorn src.api:app --reload --port 8000
 ```
 
-On the first run, `models/yolov8n.pt` downloads automatically. The interactive API docs are at <http://localhost:8000/docs>.
+The interactive API docs are at <http://localhost:8000/docs>.
+
+For SEASCAN AI, put your key in `src/.env` (git-ignored): `GEMINI_API_KEY=...`. Without it, `/chat` still answers with an automatic summary.
 
 ### Frontend (dashboard)
 
@@ -187,6 +191,7 @@ Every variable is documented in [`.env.example`](.env.example):
 
 - **Frontend:** `VITE_API_BASE` goes in `ui/.env` locally, or in the Vercel settings.
 - **Backend:** `SSS_WEIGHTS`, `SSS_DEVICE`, `SSS_MAX_UPLOAD_MB`, `SSS_CORS_ORIGINS` and `PYTHON_VERSION` are read from the process environment.
+- **SEASCAN AI:** `GEMINI_API_KEY` (required for Gemini answers; server-side only), optional `GEMINI_MODELS` (comma-separated fallback order, default `gemini-flash-lite-latest,gemini-flash-latest,gemini-2.5-flash`) and `SSS_CHAT_PER_MIN` (per-client rate limit, default 12).
 
 ## Model Performance
 

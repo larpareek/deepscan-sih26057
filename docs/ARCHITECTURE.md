@@ -58,10 +58,11 @@ The steps run in this order on purpose. Filling dropouts first stops blank pings
 
 | Method | Path | Body | Returns |
 |---|---|---|---|
-| `GET` | `/health` | – | `{status, weights, jobs}` |
+| `GET` | `/health` | – | `{status, weights, jobs, chat}` |
 | `POST` | `/upload` | multipart: `image` (.png/.jpg), `metadata` (.json) | `{job_id, image_shape, num_pings}` |
 | `POST` | `/detect` | JSON: `{job_id, confidence_threshold=75, despeckle_method="lee", include_shadow_penalized=true}` | report + raw detector fields + `timing_ms` |
 | `GET` | `/report/{job_id}?format=json\|csv` | – | file download |
+| `POST` | `/chat` | JSON: `{user_query, context_data}` | `{reply, model}` |
 
 **Latency design:**
 - The model is loaded and warmed up once at startup.
@@ -71,6 +72,8 @@ The steps run in this order on purpose. Filling dropouts first stops blank pings
 - Raw uploads are persisted in the background.
 
 The dashboard requests `confidence_threshold=0` and filters in the browser, so moving the slider never re-runs the model.
+
+**SEASCAN AI (`src/chat.py`).** The browser sends the question plus the current scan as JSON (detections with status, confidence, coordinates, precomputed distance to Chennai, and the last few turns). The server adds the system prompt and calls Gemini with `GEMINI_API_KEY`, which never leaves the server. Models are tried in order (`GEMINI_MODELS`), so a 503 "high demand" on one falls through to the next. If none answers, or no key is set, a deterministic summary ranked by hazard status is returned with `model: "offline"`. Each client is limited to `SSS_CHAT_PER_MIN` questions a minute (default 12), and context is capped at 40 kB.
 
 ### Metadata JSON (upload)
 
@@ -113,7 +116,12 @@ The dashboard requests `confidence_threshold=0` and filters in the browser, so m
 
 | Area | Files |
 |---|---|
-| App shell, state, modes (`empty` / `demo` / `live`), scan history, filters | `src/App.jsx` |
+| Router, page transitions, error boundary | `src/App.jsx` |
+| Navbar, footer, floating SEASCAN AI widget; keeps the dashboard mounted across navigation | `components/Layout.jsx` |
+| Shared state: backend health, current scan, session scans, chat thread | `lib/scanContext.jsx` |
+| Pages: landing, technology, pipeline, chat, analytics, map | `pages/*.jsx` |
+| Operator console: modes (`empty` / `demo` / `live`), scan history, filters | `pages/DashboardPage.jsx` |
+| SEASCAN AI conversation (page and widget) | `components/ChatPanel.jsx` |
 | Top bar: scan ID, system status, last update, export, settings | `components/TopBar.jsx` |
 | Operator console: SCAN (import + validation), DETECTION (threshold, despeckle, class filters), SYSTEM (sensors, pipeline timings, vehicle, log) | `components/ConsolePanel.jsx` |
 | Sonar display: range / along-track axes, grid, status-coded object boundaries, cursor readout | `components/SonarDisplay.jsx` |

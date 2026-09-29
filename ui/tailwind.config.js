@@ -17,10 +17,18 @@ export default {
         crit: { DEFAULT: "#FA4D56", text: "#FF8389" },
         ok: { DEFAULT: "#42BE65" },
         review: { DEFAULT: "#A2A9B0" },
+        // Editorial pages (landing, technology, pipeline, chat, analytics, map)
+        abyss: { DEFAULT: "#020617", 2: "#0B1224", 3: "#111A30" },
+        sunset: { DEFAULT: "#FB923C" },
+        seafoam: { DEFAULT: "#5EEAD4" },
+        cream: { DEFAULT: "#FEF3C7", dim: "#E8DDB5" },
+        biolum: { DEFAULT: "#22D3EE" },
       },
       fontFamily: {
         sans: ['"IBM Plex Sans"', "system-ui", "sans-serif"],
         mono: ['"IBM Plex Mono"', "ui-monospace", "monospace"],
+        display: ['"Playfair Display"', "Georgia", "serif"],
+        inter: ["Inter", "system-ui", "sans-serif"],
       },
       fontSize: {
         "2xs": ["11px", { lineHeight: "16px" }],

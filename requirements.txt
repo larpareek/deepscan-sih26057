@@ -14,3 +14,6 @@ onnxruntime==1.30.0
 onnxslim==0.1.96
 # GeoTIFF / georeferenced sonar mosaics
 rasterio==1.5.1
+# SEASCAN AI chat (Gemini); the key comes from GEMINI_API_KEY
+google-genai==2.25.0
+python-dotenv==1.2.3

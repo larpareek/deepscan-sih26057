@@ -400,3 +400,104 @@
   text-decoration: underline dotted #979da5;
   text-underline-offset: 3px;
 }
+
+/* ---- Site (editorial pages) ---- */
+@keyframes page-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes typing {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+.typing-dot {
+  animation: typing 1.2s infinite ease-in-out;
+}
+.typing-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.typing-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.site-focus :focus-visible {
+  outline-color: #22d3ee;
+}
+@media (prefers-reduced-motion: reduce) {
+  .typing-dot {
+    animation: none;
+  }
+}
+
+/* ---- Map page (CARTO dark basemap, no inversion) ---- */
+.seamap .leaflet-tile-pane {
+  filter: none;
+}
+.seamap .leaflet-container {
+  background: #020617;
+  font-family: Inter, system-ui, sans-serif;
+}
+.sea-pin-wrap {
+  background: none;
+  border: 0;
+}
+.sea-pin {
+  display: grid;
+  place-items: center;
+  border-radius: 9999px;
+  background: #0b1224;
+  border: 2.5px solid var(--c);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 22%, transparent), 0 6px 16px rgba(0, 0, 0, 0.55);
+  transition: transform 0.15s ease;
+}
+.sea-pin:hover,
+.sea-pin.is-active {
+  transform: scale(1.08);
+  box-shadow: 0 0 0 7px color-mix(in srgb, var(--c) 30%, transparent), 0 6px 18px rgba(0, 0, 0, 0.6);
+}
+.sea-ref {
+  position: relative;
+}
+.sea-ref i {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: #fb923c;
+  border: 2px solid #fef3c7;
+}
+.sea-ref span {
+  position: absolute;
+  left: 16px;
+  top: -4px;
+  font: 600 12px/1 Inter, sans-serif;
+  color: #fef3c7;
+  text-shadow: 0 1px 3px #000;
+  white-space: nowrap;
+}
+.seamap .leaflet-popup-content-wrapper,
+.seamap .leaflet-popup-tip {
+  background: #111a30;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #fef3c7;
+  border-radius: 12px;
+}
+.seamap .leaflet-popup-content {
+  font-size: 13px;
+}
+
+/* Inter: the console's global tabular figures ("tnum") also widen hyphens; editorial text uses normal figures */
+.font-inter {
+  font-feature-settings: normal;
+}

@@ -13,6 +13,7 @@ export async function checkHealth(signal) {
       online: true,
       latency: Math.round(performance.now() - t0),
       model: body.weights ? String(body.weights).split("/").pop() : null,
+      chat: Boolean(body.chat),
     };
   } catch {
     return { online: false };
@@ -64,3 +65,14 @@ export async function runDetection(jobId, strength) {
 }
 
 export const reportUrl = (jobId, format) => `${BASE}/report/${jobId}?format=${format}`;
+
+/** POST /chat -> { reply, model }. model is "offline" when the backend answered without Gemini. */
+export async function askSeascan(userQuery, contextData, signal) {
+  const r = await fetch(`${BASE}/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_query: userQuery, context_data: contextData }),
+    signal,
+  });
+  return jsonOrThrow(r);
+}
