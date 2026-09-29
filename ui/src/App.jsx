@@ -1,12 +1,12 @@
 // DeepScan: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
-import { MotionConfig } from "framer-motion";
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import ControlsPanel from "./components/ControlsPanel";
-import HazardsPanel from "./components/HazardsPanel";
-import Header from "./components/Header";
-import MapBar from "./components/MapBar";
-import SonarCanvas from "./components/SonarCanvas";
-import { Drawer, TooltipProvider } from "./components/ui";
+import ConsolePanel from "./components/ConsolePanel";
+import DetectionsTable from "./components/DetectionsTable";
+import ObjectDetail from "./components/ObjectDetail";
+import SonarDisplay from "./components/SonarDisplay";
+import SpatialPanel from "./components/SpatialPanel";
+import TopBar from "./components/TopBar";
+import { TooltipProvider } from "./components/ui";
 import {
   DEMO_AUV_POS,
   DEMO_DETECTIONS,
@@ -18,13 +18,20 @@ import {
   IMAGE_H,
   IMAGE_W,
 } from "./data/dummy";
-import { checkHealth, reportUrl, runDetection, uploadScan } from "./lib/api";
+import { checkHealth, despeckleMethod, reportUrl, runDetection, uploadScan } from "./lib/api";
+import { classStyle } from "./lib/classes";
+import { makeScanGeometry } from "./lib/geo";
+import { hazardStatus } from "./lib/hazard";
 import { buildSonarLayers, renderSonar } from "./lib/sonarSynth";
 import { enableAudio, playPing } from "./lib/sound";
 
 const stamp = () => new Date().toISOString().slice(11, 19);
-const MIN_LOADER_MS = 1500;
+const utc = (d = new Date()) => `${d.toISOString().slice(0, 19).replace("T", " ")} UTC`;
+// The backend can answer in ~60 ms; keep the processing state visible long enough to read.
+const MIN_PROCESSING_MS = 1200;
 const SOUND_KEY = "deepscan.sound";
+// Despeckle method -> strength used to render the synthetic demo waterfall
+const DEMO_STRENGTH = { median: 30, lee: 60, nlm: 90 };
 
 function readSoundPref() {
   try {
@@ -74,19 +81,33 @@ function buildDemoReport(detections) {
   return { json: JSON.stringify(report, null, 2), csv: [header, ...rows].join("\n") };
 }
 
+const EMPTY_LIVE = { src: null, size: null, fileName: null, detections: [], track: [], pingCoords: null, meta: null, jobId: null, detectedAt: null };
+
 export default function App() {
-  // "empty" (awaiting data) -> "demo" (synthetic survey) or "live" (uploaded scan + backend)
+  // "empty" (no data) -> "demo" (synthetic survey) or "live" (imported scan + backend)
   const [mode, setMode] = useState("empty");
-  const [backendOnline, setBackendOnline] = useState(false);
+  const [backend, setBackend] = useState({ online: false, pending: true });
   const [files, setFiles] = useState({ image: null, metadata: null });
   const [threshold, setThreshold] = useState(50);
-  const [strength, setStrength] = useState(60);
+  const [method, setMethod] = useState("lee");
+  const [classFilter, setClassFilter] = useState(() => new Set());
+  const [includeShadow, setIncludeShadow] = useState(true);
   const [hoverId, setHoverId] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
-  const [busy, setBusy] = useState(false);
+  const [phase, setPhase] = useState(null); // null | "upload" | "detect"
+  const [timings, setTimings] = useState(null);
   const [error, setError] = useState(null);
-  const [log, setLog] = useState(() => [{ t: stamp(), lvl: "ok", msg: "Console ready, awaiting acoustic data" }]);
-  // Hover "ping" sound: muted by default; the toggle click satisfies the browser's gesture rule.
+  const [log, setLog] = useState(() => [{ t: stamp(), lvl: "ok", msg: "Console ready" }]);
+  const [lastUpdate, setLastUpdate] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [currentScanId, setCurrentScanId] = useState(null);
+  const [live, setLive] = useState(EMPTY_LIVE);
+  const busy = phase !== null;
+
+  const addLog = useCallback((lvl, msg) => setLog((l) => [...l.slice(-60), { t: stamp(), lvl, msg }]), []);
+  const touch = () => setLastUpdate(stamp());
+
+  // ---- Audible contact ping (off by default; the toggle click satisfies the gesture rule)
   const [soundOn, setSoundOn] = useState(false);
   const onToggleSound = () => {
     const next = !soundOn;
@@ -98,7 +119,6 @@ export default function App() {
       /* storage unavailable: preference just won't persist */
     }
   };
-  // A remembered "on" can't start audio before a gesture; arm it on the first interaction.
   useEffect(() => {
     if (!readSoundPref()) return;
     setSoundOn(true);
@@ -106,23 +126,11 @@ export default function App() {
     window.addEventListener("pointerdown", arm, { once: true });
     return () => window.removeEventListener("pointerdown", arm);
   }, []);
-  // Canvas is the focus: side panels and map start closed.
-  const [leftOpen, setLeftOpen] = useState(false);
-  const [rightOpen, setRightOpen] = useState(false);
-  const [mapOpen, setMapOpen] = useState(false);
-  const leftToggleRef = useRef(null);
-  const rightToggleRef = useRef(null);
-  const closeLeft = useCallback(() => setLeftOpen(false), []);
-  const closeRight = useCallback(() => setRightOpen(false), []);
 
-  // Live-mode state
-  const [live, setLive] = useState({ src: null, size: null, detections: [], track: [], jobId: null });
-
-  const addLog = useCallback((lvl, msg) => setLog((l) => [...l.slice(-40), { t: stamp(), lvl, msg }]), []);
-
+  // ---- Processing API health
   useEffect(() => {
     const ctl = new AbortController();
-    const poll = async () => setBackendOnline(await checkHealth(ctl.signal));
+    const poll = async () => setBackend(await checkHealth(ctl.signal));
     poll();
     const id = setInterval(poll, 10000);
     return () => {
@@ -131,28 +139,26 @@ export default function App() {
     };
   }, []);
 
-  // Demo sonar image: build clean + speckle layers once (only when the demo is first
-  // opened), then remix them cheaply when the slider moves.
-  const layersRef = useRef(null);
-  const deferredStrength = useDeferredValue(strength);
-  const demoSrc = useMemo(() => {
-    if (mode !== "demo") return null;
-    layersRef.current ??= buildSonarLayers(IMAGE_W, IMAGE_H, DEMO_TARGETS);
-    return renderSonar(layersRef.current, deferredStrength);
-  }, [mode, deferredStrength]);
+  // ---- File import (hidden input shared by the console and the empty display)
+  const fileInputRef = useRef(null);
+  const openPicker = () => fileInputRef.current?.click();
+  const onFiles = (list) => setFiles((cur) => sortFiles(list, cur));
 
-  // When files are dropped, preview the image and read the track from metadata.
   useEffect(() => {
     if (!files.image) return;
+    // Object URLs are kept (not revoked) so scan history can restore earlier images.
     const url = URL.createObjectURL(files.image);
     const img = new Image();
     img.onload = () => {
-      setLive((s) => ({ ...s, src: url, size: { w: img.naturalWidth, h: img.naturalHeight }, detections: [], jobId: null }));
+      setLive((s) => ({ ...s, src: url, size: { w: img.naturalWidth, h: img.naturalHeight }, fileName: files.image.name, detections: [], jobId: null, detectedAt: null }));
       setMode("live");
+      setSelectedId(null);
+      setTimings(null);
+      setCurrentScanId(null);
+      touch();
       addLog("info", `Loaded ${files.image.name} (${img.naturalWidth}×${img.naturalHeight})`);
     };
     img.src = url;
-    return () => URL.revokeObjectURL(url);
   }, [files.image, addLog]);
 
   useEffect(() => {
@@ -162,7 +168,12 @@ export default function App() {
         const meta = JSON.parse(txt);
         const pts = meta.ping_coords ?? [];
         const step = Math.max(1, Math.floor(pts.length / 500));
-        setLive((s) => ({ ...s, track: pts.filter((_, i) => i % step === 0) }));
+        setLive((s) => ({
+          ...s,
+          pingCoords: pts,
+          track: pts.filter((_, i) => i % step === 0),
+          meta: { swath: meta.swath_width_m ?? 100, altitude: meta.altitude_m ?? 10, timestamp: meta.timestamp ?? null },
+        }));
         addLog("info", `Metadata: ${pts.length} pings, ${meta.swath_width_m ?? "?"} m swath`);
       } catch {
         setError("Metadata file is not valid JSON");
@@ -170,27 +181,110 @@ export default function App() {
     });
   }, [files.metadata, addLog]);
 
-  const onRun = async () => {
-    setBusy(true);
-    setError(null);
-    // The backend can answer in ~60 ms; keep the radar up long enough to read as a
-    // deliberate state rather than a flicker.
-    const minDisplay = new Promise((r) => setTimeout(r, MIN_LOADER_MS));
-    try {
-      addLog("info", "Uplinking scan to backend…");
-      const { job_id } = await uploadScan(files.image, files.metadata);
-      addLog("ok", `Job ${job_id.slice(0, 8)} accepted`);
-      const [res] = await Promise.all([runDetection(job_id, strength), minDisplay]);
-      setLive((s) => ({ ...s, detections: res.detections, jobId: job_id }));
-      addLog("info", `Inference ${res.timing_ms.inference} ms, total ${Object.values(res.timing_ms).reduce((a, b) => a + b, 0).toFixed(0)} ms`);
-      addLog(res.count ? "alert" : "ok", `${res.count} objects geotagged`);
-      if (res.count) setRightOpen(true);
-    } catch (e) {
-      setError(e.message);
-      addLog("warn", `Detection failed: ${e.message}`);
-    } finally {
-      setBusy(false);
+  // Client-side import validation (the backend enforces the same rule)
+  const fileChecks = useMemo(() => {
+    const img = files.image && live.size ? { ok: true, text: `${live.size.w}×${live.size.h}` } : files.image ? { text: "reading" } : null;
+    let md = null;
+    if (files.metadata) {
+      const n = live.pingCoords?.length;
+      if (n == null) md = { text: "reading" };
+      else if (live.size && n !== live.size.h) md = { warn: true, text: `${n} ≠ ${live.size.h} rows` };
+      else md = { ok: true, text: `${n} pings` };
     }
+    return { image: img, metadata: md };
+  }, [files, live.size, live.pingCoords]);
+
+  // ---- Demo waterfall: build clean + speckle layers once, remix per despeckle method
+  const layersRef = useRef(null);
+  const demoStrength = useDeferredValue(DEMO_STRENGTH[method]);
+  const demoSrc = useMemo(() => {
+    if (mode !== "demo") return null;
+    layersRef.current ??= buildSonarLayers(IMAGE_W, IMAGE_H, DEMO_TARGETS);
+    return renderSonar(layersRef.current, demoStrength);
+  }, [mode, demoStrength]);
+
+  // ---- Scan geometry (axes, range, along-track, cursor coordinates)
+  const isDemo = mode === "demo";
+  const isLive = mode === "live";
+  const geo = useMemo(() => {
+    if (isDemo) {
+      return {
+        ...makeScanGeometry({
+          widthPx: IMAGE_W, heightPx: IMAGE_H, swathM: DEMO_META.swath_width_m, altitudeM: DEMO_META.altitude_m,
+          start: DEMO_META.start, headingDeg: DEMO_META.heading_deg, pingSpacingM: DEMO_META.ping_spacing_m,
+        }),
+        georeferenced: true,
+      };
+    }
+    if (isLive && live.size) {
+      const ok = Boolean(live.pingCoords && live.pingCoords.length === live.size.h);
+      return {
+        ...makeScanGeometry({
+          widthPx: live.size.w, heightPx: live.size.h,
+          swathM: live.meta?.swath ?? 100, altitudeM: live.meta?.altitude ?? 10,
+          pingCoords: ok ? live.pingCoords : null,
+          // No usable metadata yet: nominal 0.2 m ping spacing so the axes still read in metres
+          start: ok ? undefined : [0, 0], pingSpacingM: 0.2,
+        }),
+        georeferenced: ok,
+      };
+    }
+    return null;
+  }, [isDemo, isLive, live.size, live.pingCoords, live.meta]);
+
+  // ---- Detections: enrich with status + position along/across track, then filter
+  const allDetections = useMemo(() => {
+    const raw = isDemo ? DEMO_DETECTIONS : isLive ? live.detections : [];
+    if (!geo) return [];
+    return raw.map((d) => ({
+      ...d,
+      label: classStyle(d.cls).label,
+      status: hazardStatus(d),
+      rangeM: geo.acrossM(d.bbox.x + d.bbox.w / 2),
+      alongM: geo.alongM(d.bbox.y + d.bbox.h / 2),
+    }));
+  }, [isDemo, isLive, live.detections, geo]);
+
+  const classCounts = useMemo(() => {
+    const c = {};
+    for (const d of allDetections) c[d.cls] = (c[d.cls] ?? 0) + 1;
+    return c;
+  }, [allDetections]);
+
+  const detections = useMemo(
+    () =>
+      allDetections.filter((d) => d.confidence > threshold && !classFilter.has(d.cls) && (includeShadow || !d.shadowPenalized)),
+    [allDetections, threshold, classFilter, includeShadow],
+  );
+  const activeId = hoverId ?? selectedId;
+  const selected = detections.find((d) => d.id === selectedId) ?? null;
+
+  const toggleClass = (cls) =>
+    setClassFilter((s) => {
+      const n = new Set(s);
+      n.has(cls) ? n.delete(cls) : n.add(cls);
+      return n;
+    });
+  const select = (id) => setSelectedId((cur) => (cur === id ? null : id));
+
+  // ---- Scan history (this session)
+  const pushHistory = (entry) => {
+    setHistory((h) => [...h.slice(-19), entry]);
+    setCurrentScanId(entry.id);
+  };
+  const onRestore = (id) => {
+    const h = history.find((x) => x.id === id);
+    if (!h) return;
+    setSelectedId(null);
+    setCurrentScanId(id);
+    if (h.kind === "demo") setMode("demo");
+    else {
+      setLive(h.snapshot);
+      setTimings(h.timings);
+      setMode("live");
+    }
+    touch();
+    addLog("info", `Restored ${h.name}`);
   };
 
   const onLoadDemo = () => {
@@ -198,23 +292,41 @@ export default function App() {
     setFiles({ image: null, metadata: null });
     setSelectedId(null);
     setError(null);
+    setTimings(null);
     setLog((l) => [...l, ...DEMO_LOG]);
+    touch();
+    pushHistory({ id: `demo-${Date.now()}`, kind: "demo", time: stamp(), name: "DEMO-L03", count: DEMO_DETECTIONS.length });
   };
 
-  const onDropFiles = (list) => setFiles((cur) => sortFiles(list, cur));
-
-  const isDemo = mode === "demo";
-  const isLive = mode === "live";
-  const allDetections = isDemo ? DEMO_DETECTIONS : isLive ? live.detections : [];
-  const detections = useMemo(
-    () => allDetections.filter((d) => d.confidence > threshold).sort((a, b) => b.confidence - a.confidence),
-    [allDetections, threshold]
-  );
-  const activeId = hoverId ?? selectedId;
-  const selected = detections.find((d) => d.id === selectedId) ?? null;
-
-  const doneTrack = isDemo ? DEMO_TRACK_DONE : isLive ? live.track : [];
-  const auvPos = isDemo ? DEMO_AUV_POS : isLive ? live.track[live.track.length - 1] ?? null : null;
+  // ---- Processing pipeline: POST /upload -> POST /detect
+  const onRun = async () => {
+    setPhase("upload");
+    setError(null);
+    const minDisplay = new Promise((r) => setTimeout(r, MIN_PROCESSING_MS));
+    try {
+      addLog("info", "Uploading scan to processing API");
+      const t0 = performance.now();
+      const { job_id } = await uploadScan(files.image, files.metadata);
+      const uploadMs = performance.now() - t0;
+      addLog("ok", `Job ${job_id.slice(0, 8)} accepted`);
+      setPhase("detect");
+      const [res] = await Promise.all([runDetection(job_id, DEMO_STRENGTH[method]), minDisplay]);
+      const detectedAt = utc();
+      const nextLive = { ...live, detections: res.detections, jobId: job_id, detectedAt };
+      setLive(nextLive);
+      const t = { upload: uploadMs, ...res.timing_ms };
+      setTimings(t);
+      touch();
+      addLog("info", `Processed in ${Math.round(Object.values(res.timing_ms).reduce((a, b) => a + b, 0))} ms (${despeckleMethod(DEMO_STRENGTH[method]).toUpperCase()})`);
+      addLog(res.count ? "alert" : "ok", `${res.count} objects classified and geotagged`);
+      pushHistory({ id: job_id, kind: "live", time: stamp(), name: `JOB-${job_id.slice(0, 6).toUpperCase()}`, count: res.count, snapshot: nextLive, timings: t });
+    } catch (e) {
+      setError(e.message);
+      addLog("warn", `Processing failed: ${e.message}`);
+    } finally {
+      setPhase(null);
+    }
+  };
 
   const onDownload = (format) => {
     if (isDemo) {
@@ -225,118 +337,121 @@ export default function App() {
     }
   };
 
-  const select = (id) => setSelectedId((cur) => (cur === id ? null : id));
-
-  const viewOnMap = (id) => {
-    setSelectedId(id);
-    setMapOpen(true);
-    // On phones the hazards drawer covers the page; close it so the map is visible.
-    if (!window.matchMedia("(min-width: 1024px)").matches) setRightOpen(false);
-    setTimeout(() => document.getElementById("mission-map-body")?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 320);
-  };
+  // ---- Derived presentation
+  const scanId = isDemo ? "DEMO-L03" : isLive ? (live.jobId ? `JOB-${live.jobId.slice(0, 6).toUpperCase()}` : `${live.fileName ?? "scan"} · unprocessed`) : null;
+  const scan = isDemo
+    ? { id: scanId, source: "Demo survey · leg 3/5 (synthetic)", width: IMAGE_W, height: IMAGE_H, altitude: DEMO_META.altitude_m }
+    : isLive && live.size
+      ? { id: scanId, source: live.fileName, width: live.size.w, height: live.size.h, altitude: live.meta?.altitude ?? "—" }
+      : null;
+  const detectedAt = isDemo ? DEMO_META.timestamp.replace("T", " ").replace("Z", " UTC") : live.detectedAt ?? "—";
+  const canRun = backend.online && files.image && files.metadata && fileChecks.metadata?.ok;
+  const runReason = !backend.online
+    ? "Processing API offline. The demo survey is available."
+    : !files.image || !files.metadata
+      ? "Import a waterfall image and its metadata."
+      : fileChecks.metadata?.warn
+        ? "Metadata ping count must match the image height."
+        : "";
+  const busyStage = phase === "upload" ? "UPLOADING SCAN" : "PREPROCESS → YOLOv8n → GEOTAG";
 
   return (
-    <MotionConfig reducedMotion="user">
     <TooltipProvider>
-      {/* Slow aurora drift + faint sonar grid behind everything (static under reduced motion) */}
-      <div className="app-bg" aria-hidden="true">
-        <div className="aurora" />
-        <div className="grid-lines" />
-        <div className="noise" />
-      </div>
-      <div className="flex min-h-screen flex-col gap-8 p-6 lg:h-screen lg:p-8">
-        <Header
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept=".png,.jpg,.jpeg,.json"
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden="true"
+        onChange={(e) => {
+          onFiles(e.target.files);
+          e.target.value = "";
+        }}
+      />
+      <div className="flex min-h-screen flex-col xl:h-screen">
+        <TopBar
+          scanId={scanId}
           mode={mode}
-          backendOnline={backendOnline}
-          hazardCount={detections.length}
-          leftOpen={leftOpen}
-          rightOpen={rightOpen}
-          onToggleLeft={() => setLeftOpen((o) => !o)}
-          onToggleRight={() => setRightOpen((o) => !o)}
-          leftToggleRef={leftToggleRef}
-          rightToggleRef={rightToggleRef}
+          backendOnline={backend.online}
+          backendPending={backend.pending}
+          busy={busy}
+          lastUpdate={lastUpdate}
           onDownload={onDownload}
           reportReady={isDemo || Boolean(live.jobId)}
-          onLoadDemo={onLoadDemo}
-          log={log}
           soundOn={soundOn}
           onToggleSound={onToggleSound}
         />
 
-        {/* Announces detection results to screen readers */}
+        {/* Announces processing results to screen readers */}
         <p className="sr-only" role="status" aria-live="polite">
-          {busy ? "Analysing scan…" : `${detections.length} hazards above ${threshold}% confidence.`}
+          {busy ? "Processing scan…" : scan ? `${detections.length} objects shown above ${threshold}% confidence.` : ""}
         </p>
 
-        <main className="flex flex-col lg:min-h-0 lg:flex-1 lg:flex-row">
-          <Drawer id="controls-drawer" side="left" open={leftOpen} onClose={closeLeft} label="Scan controls" returnFocusTo={leftToggleRef}>
-            <ControlsPanel
-              files={files}
-              onFiles={setFiles}
-              threshold={threshold}
-              onThreshold={setThreshold}
-              strength={strength}
-              onStrength={setStrength}
-              onRun={onRun}
-              busy={busy}
-              canRun={backendOnline && files.image && files.metadata}
-              error={error}
-              onClose={closeLeft}
-            />
-          </Drawer>
-
-          <div
-            className={`min-w-0 flex-none lg:h-auto lg:min-h-0 lg:flex-1 ${
-              // Phones: size to the image; the empty state needs room for its message and buttons
-              mode === "empty" ? "h-[min(640px,85vh)] min-h-[520px]" : "h-[calc((100vw-96px)/1.6+120px)] min-h-[300px]"
-            }`}
-          >
-            <SonarCanvas
-              src={isDemo ? demoSrc : isLive ? live.src : null}
-              sceneKey={isDemo ? "demo" : isLive ? `live-${live.src}` : "empty"}
-              soundOn={soundOn}
-              onUpload={() => setLeftOpen(true)}
-              onLoadDemo={onLoadDemo}
-              onFiles={onDropFiles}
-              imageSize={isDemo ? { w: IMAGE_W, h: IMAGE_H } : live.size ?? { w: IMAGE_W, h: IMAGE_H }}
-              detections={detections}
-              activeId={activeId}
-              onHover={setHoverId}
-              onSelect={select}
-              busy={busy}
+        <main className="grid flex-1 grid-cols-1 lg:grid-cols-[288px_minmax(0,1fr)] xl:min-h-0 xl:grid-cols-[288px_minmax(0,1fr)_340px]">
+          <div className="order-last border-t border-line lg:order-none lg:row-span-2 lg:border-r lg:border-t-0 xl:row-span-1 xl:min-h-0 xl:overflow-y-auto">
+            <ConsolePanel
+              scanProps={{
+                scan, files, fileChecks, onImport: openPicker, onFiles, onRun, canRun, runReason, busy, error,
+                onLoadDemo, history, currentScanId, onRestore,
+              }}
+              detectionProps={{
+                threshold, onThreshold: setThreshold, method, onMethod: setMethod,
+                classCounts, classFilter, onToggleClass: toggleClass, includeShadow, onIncludeShadow: setIncludeShadow,
+              }}
+              systemProps={{ backend, mode, phase, timings, log }}
             />
           </div>
 
-          <Drawer id="hazards-drawer" side="right" open={rightOpen} onClose={closeRight} label="Detected hazards" returnFocusTo={rightToggleRef}>
-            <HazardsPanel
-              // Remount on open so the rings, count-ups and staggered entrance play when visible
-              key={rightOpen ? "open" : "closed"}
-              detections={detections}
-              hiddenCount={allDetections.length - detections.length}
-              activeId={activeId}
-              selectedId={selectedId}
-              onHover={setHoverId}
-              onToggle={select}
-              onViewOnMap={viewOnMap}
-              onClose={closeRight}
-            />
-          </Drawer>
-        </main>
+          <div className="flex min-w-0 flex-col xl:min-h-0">
+            <div className="h-[min(80vh,calc(100vw*0.68+80px))] min-h-[340px] border-b border-line lg:h-[min(76vh,calc((100vw-288px)*0.68+80px))] xl:h-auto xl:min-h-0 xl:flex-1">
+              <SonarDisplay
+                src={isDemo ? demoSrc : isLive ? live.src : null}
+                sceneKey={isDemo ? "demo" : `${live.src}-${live.jobId}`}
+                geo={geo}
+                detections={detections}
+                activeId={activeId}
+                onHover={setHoverId}
+                onSelect={select}
+                busy={busy}
+                busyStage={busyStage}
+                soundOn={soundOn}
+                onImport={openPicker}
+                onLoadDemo={onLoadDemo}
+                onFiles={onFiles}
+                showColorbar={isDemo}
+              />
+            </div>
+            <div className="h-[280px] shrink-0 border-b border-line xl:h-[236px] xl:border-b-0">
+              <DetectionsTable
+                detections={detections}
+                hiddenCount={allDetections.length - detections.length}
+                activeId={activeId}
+                selectedId={selectedId}
+                onHover={setHoverId}
+                onSelect={select}
+              />
+            </div>
+          </div>
 
-        <MapBar
-          open={mapOpen}
-          onToggle={() => setMapOpen((o) => !o)}
-          plannedTrack={isDemo ? DEMO_TRACK : []}
-          doneTrack={doneTrack}
-          auvPos={auvPos}
-          detections={detections}
-          activeId={activeId}
-          selected={selected}
-          onHover={setHoverId}
-          onSelect={select}
-        />
+          <div className="flex flex-col border-line bg-surface lg:col-start-2 xl:col-start-auto xl:min-h-0 xl:border-l">
+            <ObjectDetail d={selected} detectedAt={detectedAt} />
+            <div className="flex min-h-[320px] flex-1 flex-col border-t border-line">
+              <SpatialPanel
+                plannedTrack={isDemo ? DEMO_TRACK : []}
+                doneTrack={isDemo ? DEMO_TRACK_DONE : isLive ? live.track : []}
+                auvPos={isDemo ? DEMO_AUV_POS : isLive ? live.track[live.track.length - 1] ?? null : null}
+                detections={detections}
+                activeId={activeId}
+                selected={selected}
+                onHover={setHoverId}
+                onSelect={select}
+              />
+            </div>
+          </div>
+        </main>
       </div>
     </TooltipProvider>
-    </MotionConfig>
   );
 }

@@ -15,14 +15,14 @@ function mulberry32(seed) {
   };
 }
 
-// Deep Abyss -> Midnight Teal -> Bioluminescent Cyan -> white
+// Muted steel return scale: near-black water -> slate blue -> off-white (strong returns)
 const STOPS = [
-  [0.0, [2, 6, 23]],
-  [0.3, [8, 47, 73]],
-  [0.55, [14, 116, 144]],
-  [0.78, [34, 211, 238]],
-  [0.92, [165, 243, 252]],
-  [1.0, [255, 255, 255]],
+  [0.0, [5, 12, 20]],
+  [0.3, [27, 51, 64]],
+  [0.55, [45, 85, 102]],
+  [0.8, [138, 169, 181]],
+  [0.93, [200, 215, 221]],
+  [1.0, [223, 232, 236]],
 ];
 
 const LUT = (() => {

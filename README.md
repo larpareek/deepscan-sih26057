@@ -27,7 +27,7 @@ Abandoned, lost and discarded fishing gear, known as **ghost nets**, keeps catch
 - **Geotagging engine:** pixel coordinates are converted to latitude/longitude using the AUV's ping positions and heading, with slant-range correction. Each object's size is estimated in metres. Reports export as **JSON and CSV**.
 - **SSS-specific preprocessing:** dropout interpolation, then speckle removal (Lee filter / Non-Local Means / median), then CLAHE contrast enhancement.
 - **Edge-ready via ONNX:** a one-command export to ONNX (opset 12), checked with onnxruntime. The ONNX file loads with the same detector class.
-- **Real-time UI:** a React dashboard with a sonar canvas, scope-style detection brackets, a hazard list, telemetry, a Leaflet mission map, and WCAG AA accessibility.
+- **Operator console UI:** a sonar-workstation interface with a calibrated sonar display (range and along-track axes, cursor readout), status-coded detections (CRITICAL / WARNING / REVIEW), a sortable detections table, a survey map, processing-pipeline timings, and WCAG 2.2 AA accessibility.
 
 ## Tech Stack
 
@@ -35,7 +35,7 @@ Abandoned, lost and discarded fishing gear, known as **ghost nets**, keeps catch
 |---|---|
 | ML / CV | Python, **YOLOv8** (Ultralytics), OpenCV, NumPy, **ONNX** / ONNX Runtime |
 | Backend | **FastAPI**, Uvicorn, Pydantic |
-| Frontend | **React**, **Vite**, **Tailwind CSS**, **Leaflet** (react-leaflet), **Framer Motion**, Radix UI |
+| Frontend | **React**, **Vite**, **Tailwind CSS**, **Leaflet** (react-leaflet), Radix UI, Lucide icons |
 | Tooling | Ruff, GitHub Actions |
 
 ## Architecture

@@ -9,7 +9,8 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/api": {
-        target: "http://localhost:8000",
+        // Override to proxy a remote backend in dev, e.g. API_PROXY_TARGET=https://<api>.up.railway.app
+        target: process.env.API_PROXY_TARGET || "http://localhost:8000",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },

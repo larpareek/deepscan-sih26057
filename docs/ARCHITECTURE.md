@@ -111,17 +111,24 @@ The dashboard requests `confidence_threshold=0` and filters in the browser, so m
 
 | Area | Files |
 |---|---|
-| App shell, state, modes (`empty` / `demo` / `live`) | `src/App.jsx` |
-| Sonar canvas, corner-bracket detections, scan overlay, empty state | `components/SonarCanvas.jsx`, `ScanOverlay.jsx`, `EmptyState.jsx` |
-| Scan controls (upload, confidence, speckle) | `components/ControlsPanel.jsx` |
-| Hazard list (accordion, confidence rings, "View on map") | `components/HazardsPanel.jsx` |
-| Mission map (lazy-loaded Leaflet, custom SVG markers) | `components/MapBar.jsx`, `MissionMap.jsx` |
-| Header, telemetry popover, menu, sound toggle | `components/Header.jsx` |
-| Shared primitives (tooltips, glossary terms, drawers, magnetic buttons, count-up) | `components/ui.jsx` |
-| API client, pixel-to-GPS mirror, glossary, demo data, synthetic sonar renderer | `lib/*`, `data/dummy.js` |
+| App shell, state, modes (`empty` / `demo` / `live`), scan history, filters | `src/App.jsx` |
+| Top bar: scan ID, system status, last update, export, settings | `components/TopBar.jsx` |
+| Operator console: SCAN (import + validation), DETECTION (threshold, despeckle, class filters), SYSTEM (sensors, pipeline timings, vehicle, log) | `components/ConsolePanel.jsx` |
+| Sonar display: range / along-track axes, grid, status-coded object boundaries, cursor readout | `components/SonarDisplay.jsx` |
+| Detections table (sortable) and object detail readout | `components/DetectionsTable.jsx`, `ObjectDetail.jsx` |
+| Survey map (lazy-loaded Leaflet, scale bar, north indicator, cursor coordinates) | `components/SpatialPanel.jsx`, `SurveyMap.jsx` |
+| Hazard status rules, scan geometry, glossary, API client, demo data | `lib/hazard.js`, `lib/geo.js`, `lib/*`, `data/dummy.js` |
+
+**Hazard status** is a presentation rule in `lib/hazard.js`; the API is unchanged. Status colour is the only colour signal in the display.
+
+| Status | Rule |
+|---|---|
+| CRITICAL | Wreck or ghost net, confidence ≥ 80% |
+| WARNING | Wreck or ghost net < 80%, or an exposed pipeline |
+| REVIEW | Unclassified object, confidence < 60%, or inside an acoustic shadow |
 
 **Accessibility (WCAG 2.2 AA):**
-- Text contrast is ≥ 4.5:1 and touch targets are ≥ 44 px.
+- Text contrast is ≥ 4.5:1. Targets are ≥ 24 px on desktop (dense console) and ≥ 44 px on touch screens.
 - Every interactive element has a visible focus ring and an ARIA name.
 - Confidence is shown with an icon and text, never colour alone.
 - Motion respects `prefers-reduced-motion`.

@@ -31,3 +31,69 @@ export function bboxDimensionsM({ x, y, w, h }, meta) {
   const along = h * meta.ping_spacing_m;
   return { length: +Math.max(along, across).toFixed(2), width: +Math.min(along, across).toFixed(2) };
 }
+
+export function distanceM([lat1, lon1], [lat2, lon2]) {
+  const mean = (((lat1 + lat2) / 2) * Math.PI) / 180;
+  const dn = (lat2 - lat1) * M_PER_DEG_LAT;
+  const de = (lon2 - lon1) * M_PER_DEG_LAT * Math.cos(mean);
+  return Math.hypot(dn, de);
+}
+
+function bearingDeg([lat1, lon1], [lat2, lon2]) {
+  const mean = (((lat1 + lat2) / 2) * Math.PI) / 180;
+  return ((Math.atan2((lon2 - lon1) * Math.cos(mean), lat2 - lat1) * 180) / Math.PI + 360) % 360;
+}
+
+/**
+ * Scan geometry for either mode, mirroring src/geotagging.py:
+ *  - live scans use the recorded ping positions (one [lat, lon] per image row)
+ *  - the demo leg is a straight track from `start` at `headingDeg`
+ * Returns helpers in metres and degrees for axes, cursor readouts and detection metadata.
+ */
+export function makeScanGeometry({ widthPx, heightPx, swathM, altitudeM, pingCoords, start, headingDeg = 0, pingSpacingM }) {
+  const legacy = { image_width_px: widthPx, swath_width_m: swathM, altitude_m: altitudeM };
+  const across = (x) => acrossTrackM(x, legacy);
+
+  if (pingCoords && pingCoords.length > 1) {
+    let total = 0;
+    for (let i = 1; i < pingCoords.length; i++) total += distanceM(pingCoords[i - 1], pingCoords[i]);
+    const spacing = total / (pingCoords.length - 1);
+    const at = (y) => {
+      const n = pingCoords.length;
+      const yy = Math.min(Math.max(y, 0), n - 1);
+      const i0 = Math.floor(yy);
+      const i1 = Math.min(i0 + 1, n - 1);
+      const t = yy - i0;
+      const [a, b] = [pingCoords[i0], pingCoords[i1]];
+      const heading = bearingDeg(pingCoords[Math.max(0, i1 - 1)], pingCoords[Math.max(1, i1)]);
+      return [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1]), heading];
+    };
+    return {
+      widthPx, heightPx, swathM, pingSpacingM: spacing, lengthM: total,
+      acrossM: across,
+      alongM: (y) => y * spacing,
+      pixelToGps(x, y) {
+        const [lat, lon, h] = at(y);
+        const d = across(x);
+        const b = ((h + 90) * Math.PI) / 180;
+        return offsetLatLon([lat, lon], d * Math.cos(b), d * Math.sin(b));
+      },
+    };
+  }
+
+  const meta = { ...legacy, start, heading_deg: headingDeg, ping_spacing_m: pingSpacingM };
+  return {
+    widthPx, heightPx, swathM, pingSpacingM, lengthM: heightPx * pingSpacingM,
+    acrossM: across,
+    alongM: (y) => y * pingSpacingM,
+    pixelToGps: (x, y) => pixelToGps(x, y, meta),
+  };
+}
+
+/** Format a coordinate as degrees with hemisphere, e.g. 13.04944° N. */
+export function fmtLat(v) {
+  return `${Math.abs(v).toFixed(5)}° ${v >= 0 ? "N" : "S"}`;
+}
+export function fmtLon(v) {
+  return `${Math.abs(v).toFixed(5)}° ${v >= 0 ? "E" : "W"}`;
+}

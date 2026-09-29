@@ -2,12 +2,20 @@
 // Thin client for the FastAPI backend (proxied at /api by vite.config.js).
 const BASE = import.meta.env.VITE_API_BASE ?? "/api";
 
+/** GET /health -> { online, latency (ms), model (weights file name) }. */
 export async function checkHealth(signal) {
+  const t0 = performance.now();
   try {
     const r = await fetch(`${BASE}/health`, { signal });
-    return r.ok;
+    if (!r.ok) return { online: false };
+    const body = await r.json().catch(() => ({}));
+    return {
+      online: true,
+      latency: Math.round(performance.now() - t0),
+      model: body.weights ? String(body.weights).split("/").pop() : null,
+    };
   } catch {
-    return false;
+    return { online: false };
   }
 }
 
