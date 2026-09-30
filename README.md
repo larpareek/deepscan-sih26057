@@ -185,6 +185,18 @@ railway variables --set "SSS_CORS_ORIGINS=https://<your-app>.vercel.app"
 
 Uploads and reports are kept on the container's disk and in memory, so they're lost on redeploy.
 
+### Backend on Hugging Face Spaces (free)
+
+A free Docker Space has enough memory for the PyTorch backend. It sleeps after about two days without traffic and wakes on the next request.
+
+```bash
+pip install huggingface_hub
+export HF_TOKEN=<token with write access>
+python scripts/deploy_hf_space.py --space <username>/seascan-api --cors https://<your-app>.vercel.app
+```
+
+The script creates the Space, stores `GEMINI_API_KEY` as a Space secret and uploads only the backend files. Then set `VITE_API_BASE` in Vercel to `https://<username>-seascan-api.hf.space` and redeploy.
+
 ### Environment variables
 
 Every variable is documented in [`.env.example`](.env.example):

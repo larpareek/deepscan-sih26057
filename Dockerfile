@@ -1,5 +1,5 @@
 # SEASCAN: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
-# Backend image (FastAPI + YOLOv8, CPU). Works on Railway, Render, Fly.io or any Docker host.
+# Backend image (FastAPI + YOLOv8, CPU). Works on Hugging Face Spaces, Railway, Render or any Docker host.
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -26,7 +26,8 @@ COPY scripts ./scripts
 COPY models ./models
 
 # Ship the SEASCAN detector in the image and check it loads at build time
-RUN mkdir -p data/raw data/processed \
+# data/ is world-writable because some hosts (Hugging Face Spaces) run the container as a non-root user
+RUN mkdir -p data/raw data/processed && chmod -R a+rwX data \
     && python -c "from src.inference import DEFAULT_WEIGHTS; from ultralytics import YOLO; print('weights:', DEFAULT_WEIGHTS, YOLO(str(DEFAULT_WEIGHTS)).names)"
 
 EXPOSE 8000
