@@ -31,4 +31,5 @@
 - **"Why halve confidence in shadows?"** Real objects produce a bright echo next to their shadow. A box that is mostly dark has no echo behind it, so it's likely noise.
 - **"Can it run offline on the vehicle?"** Yes. The ONNX export runs on ONNX Runtime with no internet, and the UI works offline with the demo survey.
 - **"Is the chatbot making things up?"** It only sees the current scan's detections (sent as JSON with each question) and is told to answer from that alone; each reply shows which model answered. Without Gemini, it falls back to a rule-based summary and says so.
-- **"Are the analytics real?"** "This session" is computed from the scans you ran. "Sample campaign" is simulated and labelled as such on the page.
+- **"Are the analytics real?"** Yes. "This session" is computed from the scans you ran; "Model validation" shows the detector's measured results (240 synthetic validation images) and the real-sonar check (wreck found in 2 of 9 AI4Shipwrecks tiles). Nothing on the page is invented.
+- **"Does it work on real sonar?"** Not well yet, and we tested it: on 9 real AI4Shipwrecks tiles it found the wreck in 2. The model learned our simulator; fine-tuning on real labelled data is the next step, and the rest of the pipeline is ready for new weights.

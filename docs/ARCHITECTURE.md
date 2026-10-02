@@ -44,7 +44,7 @@ The steps run in this order on purpose. Filling dropouts first stops blank pings
 - Returns `Detection(bbox, label, confidence 0–100, class_id, shadow_fraction, shadow_penalized)`.
 - `scripts/export_onnx.py` exports to ONNX (opset 12, optional FP16 and dynamic shapes) and runs one test pass with onnxruntime to confirm it works.
 
-> The shipped weights (`models/seascan-yolov8n.pt`) are YOLOv8n fine-tuned on SEASCAN-Synth, a synthetic side-scan dataset (`scripts/generate_synthetic.py`, `scripts/train_detector.py`): mAP@50 0.995 / mAP@50-95 0.940 on 240 synthetic validation images. Real-survey accuracy is not yet measured. If the file is missing, the API falls back to `yolov8n.pt`.
+> The shipped weights (`models/seascan-yolov8n.pt`) are YOLOv8n fine-tuned on SEASCAN-Synth, a synthetic side-scan dataset (`scripts/generate_synthetic.py`, `scripts/train_detector.py`): mAP@50 0.995 / mAP@50-95 0.940 on 240 synthetic validation images. On nine real AI4Shipwrecks side-scan tiles it located the wreck in 2 of 9 (see the README's *Real-sonar check*), so real-data fine-tuning is required. If the file is missing, the API falls back to `yolov8n.pt`; `scripts/download_weights.py` restores it.
 
 ### 3. Geotagging (`src/geotagging.py`, `GeotaggingEngine`)
 
@@ -150,7 +150,7 @@ The dashboard requests `confidence_threshold=0` and filters in the browser, so m
 flowchart LR
     U["Browser"] --> V["Vercel<br/>static React build"]
     U -- "VITE_API_BASE" --> R["Render / Railway<br/>FastAPI + YOLOv8"]
-    R --> M["models/<br/>yolov8n.pt or .onnx"]
+    R --> M["models/<br/>seascan-yolov8n.pt or .onnx"]
 ```
 
 The frontend and backend deploy separately. See the **Deployment** section of the README.

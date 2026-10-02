@@ -1,9 +1,10 @@
 // SEASCAN: AI-Powered Underwater Marine Debris & Anomaly Detection (SIH26057)
-// Survey analytics. "This session" is computed from the scans run on the dashboard; the
-// sample campaign is simulated and labelled as such everywhere it appears.
-import { Download, FlaskConical, Radar } from "lucide-react";
+// Analytics from measured data only: "This session" is computed from the scans run on the
+// dashboard; "Model validation" shows the detector's evaluation results (synthetic validation
+// set, plus the qualitative check on real AI4Shipwrecks sonar).
+import { AlertTriangle, BadgeCheck, Download, Radar } from "lucide-react";
 import { useMemo, useState } from "react";
-import { CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Link } from "react-router-dom";
 import { reportUrl } from "../lib/api";
 import { useScan } from "../lib/scanContext";
@@ -15,26 +16,152 @@ const TYPES = [
   { cls: "anomaly", name: "Anomalies", color: "#E8DDB5" },
 ];
 
-// Simulated eight-day campaign off the Tamil Nadu coast (illustrative numbers, not survey results)
-const SAMPLE = [
-  ["2026-09-21", "Ennore approach, legs 1-6", [3, 1, 2, 5], 1],
-  ["2026-09-22", "Ennore approach, legs 7-12", [5, 0, 2, 4], 2],
-  ["2026-09-23", "Chennai port, north", [2, 2, 3, 6], 1],
-  ["2026-09-24", "Chennai port, south", [6, 1, 1, 3], 3],
-  ["2026-09-25", "Marina offshore, legs 1-5", [4, 1, 2, 7], 2],
-  ["2026-09-26", "Marina offshore, legs 6-10", [7, 0, 3, 4], 4],
-  ["2026-09-27", "Besant Nagar reef edge", [5, 2, 1, 5], 3],
-  ["2026-09-28", "Kovalam shelf", [8, 1, 2, 6], 4],
-].map(([date, area, counts, critical], i) => ({
-  id: `SAMPLE-${String(i + 1).padStart(2, "0")}`,
-  date,
-  label: date.slice(5),
-  area,
-  counts: Object.fromEntries(TYPES.map((t, j) => [t.cls, counts[j]])),
-  total: counts.reduce((a, b) => a + b, 0),
-  critical,
-  avgConf: 78 + ((i * 7) % 11),
-}));
+// Measured by scripts/train_detector.py on the SEASCAN-Synth validation split (seed 26057)
+const VALIDATION = {
+  images: 240,
+  objects: 656,
+  overall: { precision: 0.999, recall: 0.999, map50: 0.995, map: 0.94 },
+  perClass: {
+    shipwreck: { images: 122, objects: 183, precision: 0.998, recall: 1.0, map50: 0.995, map: 0.975 },
+    pipe: { images: 108, objects: 128, precision: 0.999, recall: 1.0, map50: 0.995, map: 0.96 },
+    ghost_net: { images: 122, objects: 168, precision: 0.998, recall: 1.0, map50: 0.995, map: 0.951 },
+    anomaly: { images: 126, objects: 177, precision: 0.999, recall: 0.994, map50: 0.995, map: 0.873 },
+  },
+};
+
+function ValidationView() {
+  const bars = TYPES.map((t) => ({ name: t.name, "mAP@50-95": VALIDATION.perClass[t.cls].map, color: t.color }));
+  const pie = TYPES.map((t) => ({ name: t.name, value: VALIDATION.perClass[t.cls].objects, color: t.color }));
+  return (
+    <>
+      <p className="mt-6 flex items-start gap-2 rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3 text-sm text-cream/85">
+        <BadgeCheck size={16} className="mt-0.5 shrink-0 text-seafoam" aria-hidden="true" />
+        Measured results of the shipped detector on {VALIDATION.images} held-out images ({VALIDATION.objects} labelled objects) from
+        SEASCAN-Synth, our simulated side-scan dataset. Synthetic sonar is cleaner than real surveys, so treat these as an upper bound.
+      </p>
+
+      <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <Kpi label="mAP@50" value={VALIDATION.overall.map50.toFixed(3)} accent="text-seafoam" />
+        <Kpi label="mAP@50-95" value={VALIDATION.overall.map.toFixed(3)} accent="text-cream" />
+        <Kpi label="Precision" value={VALIDATION.overall.precision.toFixed(3)} accent="text-biolum" />
+        <Kpi label="Recall" value={VALIDATION.overall.recall.toFixed(3)} accent="text-sunset" />
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+        <figure className="rounded-2xl border border-white/10 bg-abyss-2 p-6">
+          <figcaption className="font-display text-xl font-bold">Accuracy by class</figcaption>
+          <p className="text-xs text-cream/55">mAP@50-95 on the validation split (higher is better, 1.0 is perfect)</p>
+          <div className="mt-4 h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={bars} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
+                <CartesianGrid stroke="rgba(254,243,199,.08)" vertical={false} />
+                <XAxis dataKey="name" {...axis} />
+                <YAxis domain={[0.8, 1]} {...axis} />
+                <Tooltip {...tooltipStyle} cursor={{ fill: "rgba(254,243,199,.05)" }} />
+                <Bar dataKey="mAP@50-95" radius={[6, 6, 0, 0]}>
+                  {bars.map((d) => (
+                    <Cell key={d.name} fill={d.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </figure>
+        <figure className="rounded-2xl border border-white/10 bg-abyss-2 p-6">
+          <figcaption className="font-display text-xl font-bold">Validation objects by type</figcaption>
+          <p className="text-xs text-cream/55">{VALIDATION.objects} labelled objects</p>
+          <div className="mt-4 h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={pie} dataKey="value" nameKey="name" innerRadius="52%" outerRadius="80%" paddingAngle={2} stroke="#0B1224" strokeWidth={2}>
+                  {pie.map((d) => (
+                    <Cell key={d.name} fill={d.color} />
+                  ))}
+                </Pie>
+                <Tooltip {...tooltipStyle} />
+                <Legend wrapperStyle={{ fontFamily: "Inter", fontSize: 13 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </figure>
+      </div>
+
+      <section className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-abyss-2" aria-labelledby="val-title">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-6 pt-6">
+          <h2 id="val-title" className="font-display text-xl font-bold">
+            Per-class results
+          </h2>
+          <button
+            type="button"
+            onClick={() => download(JSON.stringify({ dataset: "SEASCAN-Synth validation split", ...VALIDATION }, null, 2), "seascan_validation_metrics.json", "application/json")}
+            className="inline-flex h-9 items-center gap-1.5 rounded-full border border-white/15 px-3 text-xs font-medium hover:border-biolum/60 hover:text-biolum"
+          >
+            <Download size={14} aria-hidden="true" />
+            Metrics JSON
+          </button>
+        </div>
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[640px] text-left text-sm">
+            <thead className="border-y border-white/10 text-xs uppercase tracking-wider text-cream/55">
+              <tr>
+                <th className="px-6 py-3 font-medium">Class</th>
+                <th className="px-6 py-3 text-right font-medium">Images</th>
+                <th className="px-6 py-3 text-right font-medium">Objects</th>
+                <th className="px-6 py-3 text-right font-medium">Precision</th>
+                <th className="px-6 py-3 text-right font-medium">Recall</th>
+                <th className="px-6 py-3 text-right font-medium">mAP@50</th>
+                <th className="px-6 py-3 text-right font-medium">mAP@50-95</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5 font-mono">
+              {TYPES.map((t) => {
+                const r = VALIDATION.perClass[t.cls];
+                return (
+                  <tr key={t.cls}>
+                    <td className="px-6 py-3 font-inter font-medium">
+                      <span className="mr-2 inline-block h-2.5 w-2.5 rounded-full" style={{ background: t.color }} aria-hidden="true" />
+                      {t.name}
+                    </td>
+                    <td className="px-6 py-3 text-right">{r.images}</td>
+                    <td className="px-6 py-3 text-right">{r.objects}</td>
+                    <td className="px-6 py-3 text-right">{r.precision.toFixed(3)}</td>
+                    <td className="px-6 py-3 text-right">{r.recall.toFixed(3)}</td>
+                    <td className="px-6 py-3 text-right">{r.map50.toFixed(3)}</td>
+                    <td className="px-6 py-3 text-right">{r.map.toFixed(3)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="mt-6 flex gap-4 rounded-2xl border border-amber-400/30 bg-amber-400/[0.06] p-6" aria-labelledby="real-title">
+        <AlertTriangle size={22} className="mt-1 shrink-0 text-amber-300" aria-hidden="true" />
+        <div>
+          <h2 id="real-title" className="font-display text-xl font-bold">
+            Real-sonar check (AI4Shipwrecks)
+          </h2>
+          <p className="mt-2 leading-relaxed text-cream/80">
+            We also ran the detector on 9 real side-scan tiles of Great Lakes shipwrecks published by the University of Michigan&apos;s
+            AI4Shipwrecks project. It located the wreck in <strong className="text-cream">2 of 9</strong> tiles (one labelled as a
+            pipeline), missed the rest and raised false alarms on bright seabed. The synthetic-trained model does not yet transfer to
+            real surveys; fine-tuning on labelled real data (AI4Shipwrecks, NIOT surveys) is our next step, and the pipeline is ready
+            for it.
+          </p>
+          <a
+            href="https://github.com/larpareek/deepscan-sih26057#real-sonar-check"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 inline-block text-sm font-medium text-biolum underline underline-offset-2"
+          >
+            See the tiles and detections
+          </a>
+        </div>
+      </section>
+    </>
+  );
+}
 
 function fromSession(scans) {
   return scans.map((s) => {
@@ -60,7 +187,7 @@ function download(content, filename, type) {
   URL.revokeObjectURL(url);
 }
 
-/** Client-side report for scans without a backend job (demo) and for sample rows. */
+/** Client-side report for scans without a backend job (the demo survey). */
 function downloadRow(row) {
   if (row.scan?.jobId) {
     window.location.href = reportUrl(row.scan.jobId, "csv");
@@ -70,10 +197,7 @@ function downloadRow(row) {
     const header = "id,class,status,confidence,latitude,longitude";
     const lines = row.scan.detections.map((d) => [d.id, d.cls, d.status.label, d.confidence, d.lat?.toFixed(7) ?? "", d.lon?.toFixed(7) ?? ""].join(","));
     download([header, ...lines].join("\n"), `seascan_report_${row.id.toLowerCase()}.csv`, "text/csv");
-    return;
   }
-  const summary = { sample: true, note: "Simulated campaign data for demonstration", ...row };
-  download(JSON.stringify(summary, null, 2), `seascan_sample_${row.date}.json`, "application/json");
 }
 
 const tooltipStyle = {
@@ -94,9 +218,9 @@ function Kpi({ label, value, accent }) {
 
 export default function AnalyticsPage() {
   const { sessionScans } = useScan();
-  const [source, setSource] = useState(sessionScans.length ? "session" : "sample");
-  const rows = useMemo(() => (source === "session" ? fromSession(sessionScans) : SAMPLE), [source, sessionScans]);
-  const isSample = source === "sample";
+  const [source, setSource] = useState(sessionScans.length ? "session" : "validation");
+  const rows = useMemo(() => fromSession(sessionScans), [sessionScans]);
+  const isValidation = source === "validation";
 
   const totals = useMemo(() => {
     const byType = Object.fromEntries(TYPES.map((t) => [t.cls, 0]));
@@ -126,7 +250,7 @@ export default function AnalyticsPage() {
           <div className="inline-flex rounded-full border border-white/15 bg-abyss-2 p-1" role="group" aria-label="Data source">
             {[
               ["session", `This session (${sessionScans.length})`, Radar],
-              ["sample", "Sample campaign", FlaskConical],
+              ["validation", "Model validation", BadgeCheck],
             ].map(([key, label, Icon]) => (
               <button
                 key={key}
@@ -142,12 +266,8 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {isSample ? (
-          <p className="mt-6 flex items-start gap-2 rounded-xl border border-sunset/30 bg-sunset/10 px-4 py-3 text-sm text-cream/85">
-            <FlaskConical size={16} className="mt-0.5 shrink-0 text-sunset" aria-hidden="true" />
-            Simulated eight-day campaign, for illustration only. These are not real survey results. Switch to “This session” to
-            see scans you ran on the dashboard.
-          </p>
+        {isValidation ? (
+          <ValidationView />
         ) : (
           rows.length === 0 && (
             <div className="mt-10 rounded-2xl border border-dashed border-white/20 p-12 text-center">
@@ -160,7 +280,7 @@ export default function AnalyticsPage() {
           )
         )}
 
-        {rows.length > 0 && (
+        {!isValidation && rows.length > 0 && (
           <>
             <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
               <Kpi label="Detections" value={totals.total} accent="text-cream" />
@@ -173,7 +293,7 @@ export default function AnalyticsPage() {
               <figure className="rounded-2xl border border-white/10 bg-abyss-2 p-6">
                 <figcaption className="font-display text-xl font-bold">Detections over time</figcaption>
                 <p className="text-xs text-cream/55">
-                  {isSample ? "Per survey day" : lineData.length < 2 ? "Per scan (UTC). Each scan you run adds a point to the trend." : "Per scan (UTC time)"}
+                  {lineData.length < 2 ? "Per scan (UTC). Each scan you run adds a point to the trend." : "Per scan (UTC time)"}
                 </p>
                 <div className="mt-4 h-72">
                   <ResponsiveContainer width="100%" height="100%">
@@ -192,7 +312,7 @@ export default function AnalyticsPage() {
 
               <figure className="rounded-2xl border border-white/10 bg-abyss-2 p-6">
                 <figcaption className="font-display text-xl font-bold">Debris Type Distribution</figcaption>
-                <p className="text-xs text-cream/55">All detections {isSample ? "in the campaign" : "this session"}</p>
+                <p className="text-xs text-cream/55">All detections this session</p>
                 <div className="mt-4 h-72">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -218,7 +338,7 @@ export default function AnalyticsPage() {
                   <thead className="border-y border-white/10 text-xs uppercase tracking-wider text-cream/55">
                     <tr>
                       <th className="px-6 py-3 font-medium">Report</th>
-                      <th className="px-6 py-3 font-medium">{isSample ? "Survey area" : "Source"}</th>
+                      <th className="px-6 py-3 font-medium">Source</th>
                       <th className="px-6 py-3 text-right font-medium">Objects</th>
                       <th className="px-6 py-3 text-right font-medium">Critical</th>
                       <th className="px-6 py-3 text-right font-medium">Download</th>
@@ -229,7 +349,7 @@ export default function AnalyticsPage() {
                       <tr key={`${r.id}-${r.date}`} className="hover:bg-white/[0.02]">
                         <td className="px-6 py-3">
                           <span className="font-medium">{r.id}</span>
-                          <span className="block text-xs text-cream/50">{isSample ? r.date : new Date(r.date).toUTCString().slice(5, 22)}</span>
+                          <span className="block text-xs text-cream/50">{new Date(r.date).toUTCString().slice(5, 22)}</span>
                         </td>
                         <td className="max-w-[260px] truncate px-6 py-3 text-cream/75">{r.area}</td>
                         <td className="px-6 py-3 text-right font-mono">{r.total}</td>
@@ -239,10 +359,10 @@ export default function AnalyticsPage() {
                             type="button"
                             onClick={() => downloadRow(r)}
                             className="inline-flex h-9 items-center gap-1.5 rounded-full border border-white/15 px-3 text-xs font-medium hover:border-biolum/60 hover:text-biolum"
-                            aria-label={`Download ${r.id} ${isSample ? "sample summary (JSON)" : "report (CSV)"}`}
+                            aria-label={`Download ${r.id} report (CSV)`}
                           >
                             <Download size={14} aria-hidden="true" />
-                            {isSample ? "JSON" : "CSV"}
+                            CSV
                           </button>
                         </td>
                       </tr>
